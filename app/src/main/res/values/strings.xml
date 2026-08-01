@@ -1,0 +1,102 @@
+<resources>
+    <string name="app_name">Switch</string>
+    <string name="title_activity_main">Switch</string>
+    <string name="title_activity_chat">ChatActivity</string>
+
+    <!-- Auth -->
+    <string name="auth_error_verification_failed">Verification failed</string>
+    <string name="auth_error_invalid_code">Invalid code</string>
+
+    <!-- Change phone -->
+    <string name="change_phone_error_no_number_on_file">No phone number on file</string>
+    <string name="change_phone_error_enter_new_number">Enter a new phone number</string>
+    <string name="change_phone_error_invalid_number">That doesn\'t look like a valid phone number</string>
+    <string name="change_phone_error_update_failed">Phone update failed</string>
+    <string name="change_phone_error_could_not_verify_current">Could not verify current phone</string>
+    <string name="change_phone_error_invalid_code">Invalid code</string>
+    <string name="change_phone_error_verification_failed">Verification failed</string>
+    <string name="change_phone_error_reauth_expired">Verification expired — please confirm your current number again.</string>
+
+    <!-- Edit profile -->
+    <string name="edit_profile_error_username_empty">Username cannot be empty</string>
+    <string name="edit_profile_error_save_failed">Save failed</string>
+
+    <!-- Edit contact -->
+    <string name="edit_contact_error_missing_id">Missing contact id</string>
+    <string name="edit_contact_error_name_empty">Name cannot be empty</string>
+    <string name="edit_contact_error_save_failed">Save failed</string>
+
+    <!-- Chat -->
+    <string name="chat_error_delete_failed">Delete failed</string>
+
+    <!-- Profile -->
+    <string name="profile_error_username_empty">Username cannot be empty</string>
+    <string name="profile_error_update_failed">Update failed</string>
+
+    <!-- Search users -->
+    <string name="search_error_create_conversation_failed">Failed to create conversation</string>
+
+    <!-- Generic -->
+    <string name="error_generic">Something went wrong</string>
+
+    <!-- Notification channels -->
+    <string name="notif_group_messages">Messages</string>
+    <string name="notif_group_calls">Calls</string>
+    <string name="notif_channel_messages_name">Chat messages</string>
+    <string name="notif_channel_messages_desc">New chat messages</string>
+    <string name="notif_channel_incoming_call_name">Incoming calls</string>
+    <string name="notif_channel_incoming_call_desc">Ringing for incoming voice calls</string>
+    <string name="notif_channel_ongoing_call_name">Active call</string>
+    <string name="notif_channel_ongoing_call_desc">Persistent notification while a voice call is in progress</string>
+    <string name="notif_channel_missed_call_name">Missed calls</string>
+    <string name="notif_channel_missed_call_desc">Calls you missed</string>
+
+    <!-- Call notifications -->
+    <string name="notif_call_incoming_title">Incoming call</string>
+    <string name="notif_call_incoming_text">Incoming voice call</string>
+    <string name="notif_call_incoming_video_text">Incoming video call</string>
+    <string name="notif_call_caller_fallback">Caller</string>
+    <string name="notif_call_voice_call">Voice call</string>
+    <string name="notif_call_video_call">Video call</string>
+    <string name="notif_call_on_call">On call</string>
+    <string name="notif_call_on_video_call">On video call</string>
+    <string name="notif_call_calling">Calling…</string>
+    <string name="notif_call_action_accept">Accept</string>
+    <string name="notif_call_action_decline">Decline</string>
+    <string name="notif_call_action_end">End call</string>
+
+    <!-- Missed call notifications -->
+    <string name="notif_missed_call_title">Missed call</string>
+    <string name="notif_missed_video_call_title">Missed video call</string>
+    <string name="notif_missed_call_text">Missed call from %1$s</string>
+    <string name="notif_unknown_caller">Unknown</string>
+
+    <!-- Chat notifications -->
+    <string name="notif_message_fallback_sender">New message</string>
+    <string name="notif_message_you">You</string>
+    <string name="notif_action_reply">Reply</string>
+    <string name="notif_action_reply_hint">Reply…</string>
+    <string name="notif_action_mark_read">Mark as read</string>
+    <string name="notif_action_open_window">Open in window</string>
+    <string name="notif_summary_new_messages">%1$d new messages</string>
+
+    <!-- Notification permission -->
+    <string name="notif_permission_rationale_title">Stay in the loop</string>
+    <string name="notif_permission_rationale_body">Allow notifications so you can see new messages and incoming calls even when the app is closed.</string>
+    <string name="notif_permission_rationale_allow">Allow</string>
+    <string name="notif_permission_rationale_not_now">Not now</string>
+    <string name="notif_permission_settings_prompt">Enable notifications so calls and messages can ring.</string>
+
+    <!-- Full-screen intent (lock-screen calls) -->
+    <string name="fsi_rationale_title">Show calls on the lock screen</string>
+    <string name="fsi_rationale_body">Allow full-screen notifications so incoming calls appear over the lock screen.</string>
+    <string name="fsi_rationale_open_settings">Open settings</string>
+
+    <!-- Incoming call screen -->
+    <string name="call_incoming_subtitle">Incoming voice call</string>
+    <string name="call_incoming_video_subtitle">Incoming video call</string>
+    <string name="call_action_accept">Accept</string>
+    <string name="call_action_decline">Decline</string>
+    <string name="call_ongoing_subtitle">Ongoing call — tap to return</string>
+    <string name="call_ongoing_video_subtitle">Ongoing video call — tap to return</string>
+</resources>

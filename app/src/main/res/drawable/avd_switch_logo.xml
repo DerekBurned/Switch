@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:drawable="@drawable/splash_switch_logo">
+    <target android:name="badges">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:propertyName="scaleX"
+                    android:valueFrom="0.6"
+                    android:valueTo="1.0"
+                    android:duration="450"
+                    android:interpolator="@android:interpolator/overshoot"/>
+                <objectAnimator
+                    android:propertyName="scaleY"
+                    android:valueFrom="0.6"
+                    android:valueTo="1.0"
+                    android:duration="450"
+                    android:interpolator="@android:interpolator/overshoot"/>
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="arrows">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="rotation"
+                android:valueFrom="-90"
+                android:valueTo="0"
+                android:duration="600"
+                android:interpolator="@android:interpolator/fast_out_slow_in"/>
+        </aapt:attr>
+    </target>
+</animated-vector>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:name="badges" android:pivotX="54" android:pivotY="54">
+        <path android:fillColor="#5AC8FA"
+            android:pathData="M61,26 h10 a9,9 0 0 1 9,9 v10 a9,9 0 0 1 -9,9 h-10 a9,9 0 0 1 -9,-9 v-10 a9,9 0 0 1 9,-9 z"/>
+        <path android:fillColor="#0B1220"
+            android:pathData="M66,33 A4,4 0 1 1 66,41 A4,4 0 1 1 66,33 Z"/>
+        <path android:fillColor="#0B1220"
+            android:pathData="M62,45 h8 a4,4 0 0 1 0,8 h-8 a4,4 0 0 1 0,-8 z"/>
+        <path android:fillColor="#34C759"
+            android:pathData="M37,54 h10 a9,9 0 0 1 9,9 v10 a9,9 0 0 1 -9,9 h-10 a9,9 0 0 1 -9,-9 v-10 a9,9 0 0 1 9,-9 z"/>
+        <path android:fillColor="#0B1220"
+            android:pathData="M42,61 A4,4 0 1 1 42,69 A4,4 0 1 1 42,61 Z"/>
+        <path android:fillColor="#0B1220"
+            android:pathData="M38,73 h8 a4,4 0 0 1 0,8 h-8 a4,4 0 0 1 0,-8 z"/>
+    </group>
+    <group android:name="arrows" android:pivotX="54" android:pivotY="54">
+        <path android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:pathData="M33,52 Q35,43 49,40"/>
+        <group android:translateX="49" android:translateY="40" android:rotation="78">
+            <path android:fillColor="#FFFFFF" android:pathData="M0,-4 L3.5,3 L-3.5,3 z"/>
+        </group>
+        <path android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:pathData="M75,56 Q73,65 59,68"/>
+        <group android:translateX="59" android:translateY="68" android:rotation="258">
+            <path android:fillColor="#FFFFFF" android:pathData="M0,-4 L3.5,3 L-3.5,3 z"/>
+        </group>
+    </group>
+</vector>

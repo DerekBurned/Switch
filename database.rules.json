@@ -1,0 +1,59 @@
+{
+  "rules": {
+    "presence": {
+      "$userId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $userId",
+        ".validate": "newData.hasChildren(['state', 'lastSeen'])",
+        "state": {
+          ".validate": "newData.isString() && (newData.val() === 'online' || newData.val() === 'away' || newData.val() === 'offline')"
+        },
+        "lastSeen": {
+          ".validate": "newData.isNumber()"
+        },
+        "lastChanged": {
+          ".validate": "newData.val() === now"
+        }
+      }
+    },
+    "typing": {
+      "$conversationId": {
+        ".read": "auth != null",
+        "$userId": {
+          ".write": "auth != null && auth.uid === $userId",
+          ".validate": "newData.hasChild('timestamp') || !newData.exists()",
+          "timestamp": {
+            ".validate": "newData.val() === now"
+          }
+        }
+      }
+    },
+    "calls": {
+      "$calleeId": {
+        ".read": "auth != null && auth.uid === $calleeId",
+        "$callId": {
+          ".read": "auth != null && (auth.uid === $calleeId || data.child('callerId').val() === auth.uid)",
+          ".write": "auth != null && (newData.child('callerId').val() === auth.uid || data.child('callerId').val() === auth.uid || auth.uid === $calleeId)",
+          "callerId":    { ".validate": "newData.isString()" },
+          "calleeId":    { ".validate": "newData.isString() && newData.val() === $calleeId" },
+          "channelName": { ".validate": "newData.isString()" },
+          "status":      { ".validate": "newData.isString()" }
+        }
+      }
+    },
+    "callAcks": {
+      "$callerId": {
+        ".read": "auth != null && auth.uid === $callerId",
+        "$callId": {
+          ".write": "auth != null && ((newData.exists() && newData.child('calleeId').val() === auth.uid) || (!newData.exists() && (auth.uid === $callerId || data.child('calleeId').val() === auth.uid)))",
+          "calleeId":  { ".validate": "newData.isString()" },
+          "ringingAt": { ".validate": "newData.isNumber()" }
+        }
+      }
+    },
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

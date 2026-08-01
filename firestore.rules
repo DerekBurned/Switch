@@ -1,0 +1,206 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isParticipant(conversationData) {
+      return isAuthenticated() && request.auth.uid in conversationData.participantIds;
+    }
+
+    function isValidString(field, maxLen) {
+      return field is string && field.size() > 0 && field.size() <= maxLen;
+    }
+
+    // Call-event message types (attributed to the caller, written by either device).
+    function isCallType(t) {
+      return t in ['MISSED_CALL', 'UNREACHED_CALL', 'ENDED_CALL'];
+    }
+
+    // An E2EE-encrypted body carries ciphertext/nonce instead of plaintext text.
+    function isEncryptedBody(data) {
+      return data.get('enc', 0) == 1
+             && isValidString(data.ciphertext, 20000)
+             && isValidString(data.nonce, 64)
+             && data.get('text', '') == '';
+    }
+
+    // A message's body is valid when it is a text message with non-empty text,
+    // a media message carrying at least one item (caption may be empty), a
+    // call event (which has no text body), or an E2EE-encrypted envelope.
+    function hasValidMessageBody(data) {
+      return isValidString(data.text, 5000)
+             || (data.get('type', 'TEXT') == 'MEDIA' && data.get('mediaItems', []).size() > 0)
+             || isCallType(data.get('type', 'TEXT'))
+             || isEncryptedBody(data);
+    }
+
+    // When text/caption is present it must stay within the length cap (empty allowed).
+    function textWithinLimit(data) {
+      return data.get('text', '') is string && data.get('text', '').size() <= 5000;
+    }
+
+    // "deletedFor" holds the uids that have hidden this message for themselves.
+    function deletedForOf(data) {
+      return data.get('deletedFor', []);
+    }
+
+    // True when an update leaves everyone else's deletedFor membership intact,
+    // i.e. the caller may only add/remove their OWN uid, never someone else's.
+    function onlyTogglesOwnDeletedFor() {
+      return deletedForOf(request.resource.data).removeAll([request.auth.uid])
+             == deletedForOf(resource.data).removeAll([request.auth.uid]);
+    }
+
+    // "clearedAt" maps uid -> millis at which that user cleared ("delete for me")
+    // a conversation. A caller may only change their OWN entry.
+    function clearedAtOf(data) {
+      return data.get('clearedAt', {});
+    }
+
+    function onlyTogglesOwnClearedAt() {
+      return clearedAtOf(request.resource.data)
+               .diff(clearedAtOf(resource.data))
+               .affectedKeys()
+               .hasOnly([request.auth.uid]);
+    }
+
+    function unreadCountsOf(data) {
+      return data.get('unreadCounts', {});
+    }
+
+    function onlyTouchesOwnUnreadCount() {
+      return unreadCountsOf(request.resource.data)
+               .diff(unreadCountsOf(resource.data))
+               .affectedKeys()
+               .hasOnly([request.auth.uid]);
+    }
+
+    function visibleToOf(data) {
+      return data.get('visibleTo', []);
+    }
+
+    function onlyTogglesOwnVisibility() {
+      return visibleToOf(request.resource.data).removeAll([request.auth.uid])
+             == visibleToOf(resource.data).removeAll([request.auth.uid]);
+    }
+
+    // ── /users/{userId} ───────────────────────────────────────────
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+
+      allow create: if isOwner(userId)
+          && isValidString(request.resource.data.username, 50)
+          && request.resource.data.id == userId;
+
+      allow update: if isOwner(userId)
+          && request.resource.data.id == resource.data.id;
+
+      allow delete: if isOwner(userId);
+    }
+
+    // ── /users/{userId}/contactAliases/{aliasId} ───────────────────────────────────────────
+
+    match /users/{userId}/contactAliases/{aliasId} {
+
+      allow read: if isAuthenticated();
+
+      allow create: if isOwner(userId)
+          && isValidString(request.resource.data.name, 50);
+
+      allow update: if isOwner(userId)
+          && isValidString(request.resource.data.name, 50);
+
+      allow delete: if isOwner(userId);
+    }
+
+    // ── /users/{userId}/keys/{epochId} ─────────────────────────────────────────
+
+    match /users/{userId}/keys/{epochId} {
+      allow read: if isAuthenticated();
+
+      allow create: if isOwner(userId)
+          && isValidString(request.resource.data.pub, 100)
+          && request.resource.data.epoch is int;
+
+      allow update: if isOwner(userId)
+          && request.resource.data.pub == resource.data.pub
+          && request.resource.data.epoch == resource.data.epoch;
+
+      allow delete: if false;
+    }
+
+    // ── /conversations/{conversationId} ───────────────────────────
+
+    match /conversations/{conversationId} {
+      allow read: if isParticipant(resource.data)
+                  || (isAuthenticated() && request.auth.uid in visibleToOf(resource.data));
+
+      allow create: if isAuthenticated()
+                    && request.auth.uid in request.resource.data.participantIds
+                    && request.resource.data.participantIds.size() >= 2
+                    && request.resource.data.participantIds.size() <= 50;
+
+      allow update: if isParticipant(resource.data)
+                    && request.resource.data.participantIds == resource.data.participantIds
+                    && onlyTogglesOwnClearedAt()
+                    && onlyTouchesOwnUnreadCount()
+                    && onlyTogglesOwnVisibility();
+
+      allow delete: if isParticipant(resource.data);
+
+      // ── /conversations/{conversationId}/messages/{messageId} ──
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated()
+                    && isParticipant(
+                         get(/databases/$(database)/documents/conversations/$(conversationId)).data
+                       );
+
+        allow create: if isAuthenticated()
+                      && hasValidMessageBody(request.resource.data)
+                      && textWithinLimit(request.resource.data)
+                      && request.resource.data.conversationId == conversationId
+                      && isParticipant(
+                           get(/databases/$(database)/documents/conversations/$(conversationId)).data
+                         )
+                      && (
+                           // Normal message: author is the writer.
+                           request.resource.data.senderId == request.auth.uid
+                           // Call-event message (missed/unreached/ended) may be attributed to
+                           // the caller even though the callee's device writes it — as long as
+                           // the named sender is a participant of the conversation.
+                           || (
+                                isCallType(request.resource.data.get('type', ''))
+                                && request.resource.data.senderId in
+                                     get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds
+                              )
+                         );
+
+        allow update: if isAuthenticated()
+                      && isParticipant(
+                           get(/databases/$(database)/documents/conversations/$(conversationId)).data
+                         )
+                      && request.resource.data.senderId == resource.data.senderId
+                      && request.resource.data.conversationId == resource.data.conversationId
+                      // a participant may only hide/unhide the message for themselves,
+                      // never toggle the other participant's deletedFor entry
+                      && onlyTogglesOwnDeletedFor();
+
+        // Hard delete is disallowed: it would remove the message for every
+        // participant. "Delete for me" is a soft delete done via update above
+        // (the client adds its own uid to deletedFor and filters on read).
+      }
+    }
+  }
+}

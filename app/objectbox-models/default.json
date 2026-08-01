@@ -1,0 +1,484 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "2:1061585220423384893",
+      "lastPropertyId": "13:1904136900589569768",
+      "name": "ObxConversation",
+      "properties": [
+        {
+          "id": "1:3556238304486245554",
+          "name": "boxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8325209801706811950",
+          "name": "uid",
+          "indexId": "2:1069962222817456568",
+          "type": 9,
+          "flags": 34848
+        },
+        {
+          "id": "3:7323517292421900654",
+          "name": "participantIds",
+          "type": 9
+        },
+        {
+          "id": "4:6550555387275185145",
+          "name": "participantNames",
+          "type": 9
+        },
+        {
+          "id": "5:3025031514617058078",
+          "name": "participantAvatars",
+          "type": 9
+        },
+        {
+          "id": "6:4212816515809413667",
+          "name": "lastMessage",
+          "type": 9
+        },
+        {
+          "id": "7:6056334953435324815",
+          "name": "lastMessageTimestamp",
+          "type": 6
+        },
+        {
+          "id": "8:2027784262801143347",
+          "name": "unreadCount",
+          "type": 5
+        },
+        {
+          "id": "9:2406085416382604908",
+          "name": "latestMessageText",
+          "type": 9
+        },
+        {
+          "id": "10:7497885555049317093",
+          "name": "latestMessageTimestamp",
+          "type": 6
+        },
+        {
+          "id": "11:3445055875133605208",
+          "name": "clearedAtForMe",
+          "type": 6
+        },
+        {
+          "id": "12:935237610211219593",
+          "name": "lastMessageSenderId",
+          "type": 9
+        },
+        {
+          "id": "13:1904136900589569768",
+          "name": "latestMessageSenderId",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "3:4341758104649949526",
+      "lastPropertyId": "16:7156656184938300899",
+      "name": "ObxMessage",
+      "properties": [
+        {
+          "id": "1:5110579215433028546",
+          "name": "boxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:553805707387845544",
+          "name": "uid",
+          "indexId": "3:647031112869654996",
+          "type": 9,
+          "flags": 34848
+        },
+        {
+          "id": "3:2988942417182379529",
+          "name": "conversationId",
+          "indexId": "4:1214546763100103282",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:2801464980935234608",
+          "name": "senderId",
+          "type": 9
+        },
+        {
+          "id": "5:1454289919046333322",
+          "name": "text",
+          "type": 9
+        },
+        {
+          "id": "6:5076365403413054903",
+          "name": "timestamp",
+          "type": 6
+        },
+        {
+          "id": "7:948808641901272148",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "8:473410579092581317",
+          "name": "isRead",
+          "type": 1
+        },
+        {
+          "id": "9:5805506282267077984",
+          "name": "deleted",
+          "type": 1
+        },
+        {
+          "id": "10:4953861061628884905",
+          "name": "type",
+          "indexId": "14:8573816430883996268",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "11:8716276272383200805",
+          "name": "replyToMessageId",
+          "type": 9
+        },
+        {
+          "id": "12:2502606579759390104",
+          "name": "replyToText",
+          "type": 9
+        },
+        {
+          "id": "13:8780404970186983134",
+          "name": "replyToSenderId",
+          "type": 9
+        },
+        {
+          "id": "14:482020273967582249",
+          "name": "callDurationSeconds",
+          "type": 5
+        },
+        {
+          "id": "15:303068290605816419",
+          "name": "mediaItemsJson",
+          "type": 9
+        },
+        {
+          "id": "16:7156656184938300899",
+          "name": "callVideo",
+          "type": 1
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "4:1330149472597221838",
+      "lastPropertyId": "10:956240777694490889",
+      "name": "ObxProfile",
+      "properties": [
+        {
+          "id": "1:1699819695065238068",
+          "name": "boxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6127458910720113241",
+          "name": "uid",
+          "indexId": "5:2809747539842087011",
+          "type": 9,
+          "flags": 34848
+        },
+        {
+          "id": "3:7929236873169940520",
+          "name": "username",
+          "type": 9
+        },
+        {
+          "id": "4:2059252692672620817",
+          "name": "email",
+          "type": 9
+        },
+        {
+          "id": "5:2979115706647552251",
+          "name": "userId",
+          "indexId": "6:1411344282246346783",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "6:1017766512645109854",
+          "name": "avatarUrl",
+          "type": 9
+        },
+        {
+          "id": "7:1580948807915325482",
+          "name": "lastSeen",
+          "type": 6
+        },
+        {
+          "id": "8:9086947824152489702",
+          "name": "isOnline",
+          "type": 1
+        },
+        {
+          "id": "9:6952560377737566240",
+          "name": "phoneVisibility",
+          "type": 9
+        },
+        {
+          "id": "10:956240777694490889",
+          "name": "fcmToken",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "5:2219787385661351851",
+      "lastPropertyId": "6:4983909428337954369",
+      "name": "ObxSyncQueueItem",
+      "properties": [
+        {
+          "id": "1:5911797558044342187",
+          "name": "boxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2989835375242688737",
+          "name": "entityType",
+          "type": 9
+        },
+        {
+          "id": "3:6972664007555059305",
+          "name": "entityId",
+          "type": 9
+        },
+        {
+          "id": "4:8025474073673225959",
+          "name": "action",
+          "type": 9
+        },
+        {
+          "id": "5:8726574669043929410",
+          "name": "timestamp",
+          "type": 6
+        },
+        {
+          "id": "6:4983909428337954369",
+          "name": "retryCount",
+          "type": 5
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "6:9099934813054163096",
+      "lastPropertyId": "9:5951392923929070310",
+      "name": "ObxUser",
+      "properties": [
+        {
+          "id": "1:4148920900721431570",
+          "name": "boxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8854350253651539628",
+          "name": "uid",
+          "indexId": "7:4551550025857665582",
+          "type": 9,
+          "flags": 34848
+        },
+        {
+          "id": "3:6775251474545330965",
+          "name": "username",
+          "indexId": "8:2540437170332799658",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:1695870767469413793",
+          "name": "email",
+          "indexId": "9:2387546174347519727",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "5:7426201378949151826",
+          "name": "phoneNumber",
+          "type": 9
+        },
+        {
+          "id": "6:3184378660794924977",
+          "name": "avatarUrl",
+          "type": 9
+        },
+        {
+          "id": "7:1451626605561371148",
+          "name": "lastSeen",
+          "type": 6
+        },
+        {
+          "id": "8:4041015398361419576",
+          "name": "isOnline",
+          "type": 1
+        },
+        {
+          "id": "9:5951392923929070310",
+          "name": "usernameLower",
+          "indexId": "11:2128443420894485632",
+          "type": 9,
+          "flags": 2048
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "7:3709367518730688828",
+      "lastPropertyId": "4:946174323153985725",
+      "name": "ObxContactAlias",
+      "properties": [
+        {
+          "id": "1:7586363242658437150",
+          "name": "boxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8796799173963558270",
+          "name": "contactId",
+          "indexId": "10:7152094659063723557",
+          "type": 9,
+          "flags": 34848
+        },
+        {
+          "id": "3:5946190948966910260",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "4:946174323153985725",
+          "name": "updatedAt",
+          "type": 6
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "8:1895003109686240165",
+      "lastPropertyId": "7:3180765728003725883",
+      "name": "ObxPeerKey",
+      "properties": [
+        {
+          "id": "1:2265243678917280329",
+          "name": "boxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:760347957809212629",
+          "name": "uidEpoch",
+          "indexId": "12:4178024811104611567",
+          "type": 9,
+          "flags": 34848
+        },
+        {
+          "id": "3:5521183822563024288",
+          "name": "uid",
+          "indexId": "13:2019490487080404121",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:2472797500372545214",
+          "name": "epoch",
+          "type": 5
+        },
+        {
+          "id": "5:2167664082396258267",
+          "name": "publicKey",
+          "type": 9
+        },
+        {
+          "id": "6:4551385242711569804",
+          "name": "verified",
+          "type": 1
+        },
+        {
+          "id": "7:3180765728003725883",
+          "name": "seenAt",
+          "type": 6
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "9:4720943861352973165",
+      "lastPropertyId": "6:2669322687366780251",
+      "name": "ObxRecentContact",
+      "properties": [
+        {
+          "id": "1:8411380656672069914",
+          "name": "boxId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4488158527296582860",
+          "name": "userId",
+          "indexId": "15:1010364002387416869",
+          "type": 9,
+          "flags": 34848
+        },
+        {
+          "id": "3:2543968878057738201",
+          "name": "username",
+          "type": 9
+        },
+        {
+          "id": "4:7642067178407275254",
+          "name": "avatarUrl",
+          "type": 9
+        },
+        {
+          "id": "5:1086753033775749280",
+          "name": "lastSearchedAt",
+          "type": 6
+        },
+        {
+          "id": "6:2669322687366780251",
+          "name": "lastOpenedAt",
+          "type": 6
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "9:4720943861352973165",
+  "lastIndexId": "15:1010364002387416869",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [
+    7187274869500713986
+  ],
+  "retiredIndexUids": [
+    4525260279783167886
+  ],
+  "retiredPropertyUids": [
+    182817554610481170,
+    163840059138077943,
+    292285798966226428,
+    5271299130691038674,
+    359224614107768151,
+    4740357674656658466
+  ],
+  "retiredRelationUids": [],
+  "version": 1
+}
