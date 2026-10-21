@@ -1,6 +1,13 @@
 package com.example.messenger.data.remote.firebase
 
-import com.example.messenger.data.remote.dto.RemoteMessageDto
+import com.example.messenger.data.remote.dto.message.RemoteMessageDto
+import com.example.messenger.domain.model.Message
+
+fun clipLabelFor(msgType: String, voice: String, video: String): String? = when (msgType) {
+    Message.TYPE_VOICE_CLIP -> voice
+    Message.TYPE_VIDEO_CLIP -> video
+    else -> null
+}
 
 fun parseIncomingDto(data: Map<String, String>): RemoteMessageDto? {
     val conversationId = data["conversationId"].orEmpty()

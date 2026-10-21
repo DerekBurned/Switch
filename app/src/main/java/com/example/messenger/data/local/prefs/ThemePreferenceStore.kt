@@ -5,11 +5,11 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.example.messenger.presentation.screens.ui.theme.AppFont
-import com.example.messenger.presentation.screens.ui.theme.AppTextSize
-import com.example.messenger.presentation.screens.ui.theme.BarPosition
-import com.example.messenger.presentation.screens.ui.theme.SavedWallpaper
-import com.example.messenger.presentation.screens.ui.theme.ThemeMode
+import com.example.messenger.presentation.theme.ThemeMode
+import com.example.messenger.presentation.theme.model.AppFont
+import com.example.messenger.presentation.theme.model.AppTextSize
+import com.example.messenger.presentation.theme.model.BarPosition
+import com.example.messenger.presentation.theme.model.SavedWallpaper
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

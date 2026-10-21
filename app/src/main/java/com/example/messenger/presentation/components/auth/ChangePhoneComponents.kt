@@ -9,22 +9,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.messenger.presentation.components.auth.model.Country
 import com.example.messenger.presentation.components.common.PillButton
-import com.example.messenger.presentation.screens.ui.theme.PrimaryBlue
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
-import com.example.messenger.presentation.state.ChangePhoneStep
-import com.example.messenger.presentation.state.ChangePhoneUiState
-import androidx.compose.material3.Surface
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
+import com.example.messenger.presentation.screens.changephone.ChangePhoneStep
+import com.example.messenger.presentation.screens.changephone.ChangePhoneUiState
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.PrimaryBlue
+import com.example.messenger.presentation.theme.messengerTokens
 
 @Composable
 fun StepIndicator(step: ChangePhoneStep) {

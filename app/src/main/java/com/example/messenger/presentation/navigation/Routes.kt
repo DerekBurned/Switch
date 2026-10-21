@@ -76,3 +76,6 @@ data class CallRoute(
     val partnerPhone: String,
     val video: Boolean = false,
 ) : NavKey
+
+@Serializable
+data object DeleteAccountRoute : NavKey

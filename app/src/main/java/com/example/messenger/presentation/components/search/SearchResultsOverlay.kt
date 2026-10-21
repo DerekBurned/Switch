@@ -18,8 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -27,16 +27,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.messenger.domain.featureflag.FeatureFlag
 import com.example.messenger.domain.model.User
 import com.example.messenger.presentation.base.ObserveAsEvents
 import com.example.messenger.presentation.components.common.MessengerAvatar
 import com.example.messenger.presentation.components.common.WallpaperBackground
-import com.example.messenger.presentation.effect.SearchUsersEffect
-import com.example.messenger.presentation.screens.ui.theme.BarPosition
-import com.example.messenger.presentation.screens.ui.theme.LocalTabBarPosition
-import com.example.messenger.presentation.screens.ui.theme.PrimaryBlue
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
-import com.example.messenger.presentation.viewmodel.SearchUsersViewModel
+import com.example.messenger.presentation.featureflag.featureEnabled
+import com.example.messenger.presentation.theme.LocalTabBarPosition
+import com.example.messenger.presentation.theme.PrimaryBlue
+import com.example.messenger.presentation.theme.messengerTokens
+import com.example.messenger.presentation.theme.model.BarPosition
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
@@ -90,9 +90,10 @@ fun SearchResultsOverlay(
                 }
                 uiState.error != null -> CenterMessage(uiState.error!!.asString())
                 query.isBlank() -> {
-                    val searched = uiState.recentSearched
+                    val recentEnabled = featureEnabled(FeatureFlag.SEARCH_RECENT)
+                    val searched = if (recentEnabled) uiState.recentSearched else emptyList()
                     val searchedIds = searched.mapTo(HashSet()) { it.id }
-                    val opened = uiState.recentOpened.filterNot { it.id in searchedIds }
+                    val opened = if (recentEnabled) uiState.recentOpened.filterNot { it.id in searchedIds } else emptyList()
                     if (searched.isEmpty() && opened.isEmpty()) {
                         CenterMessage("Type a username to search")
                     } else {

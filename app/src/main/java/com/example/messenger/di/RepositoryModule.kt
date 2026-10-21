@@ -1,15 +1,17 @@
 package com.example.messenger.di
 
-import com.example.messenger.data.local.repository.ILocalRepository
-import com.example.messenger.data.local.repository.LocalRepositoryImpl
 import com.example.messenger.data.repository.AuthRepositoryImpl
+import com.example.messenger.data.repository.ClipRepositoryImpl
 import com.example.messenger.data.repository.ConversationRepositoryImpl
+import com.example.messenger.data.repository.LocalRepositoryImpl
 import com.example.messenger.data.repository.MediaRepositoryImpl
 import com.example.messenger.data.repository.MessageRepositoryImpl
 import com.example.messenger.data.repository.SyncRepositoryImpl
 import com.example.messenger.data.repository.UserRepositoryImpl
 import com.example.messenger.domain.repository.IAuthRepository
+import com.example.messenger.domain.repository.IClipRepository
 import com.example.messenger.domain.repository.IConversationRepository
+import com.example.messenger.domain.repository.ILocalRepository
 import com.example.messenger.domain.repository.IMediaRepository
 import com.example.messenger.domain.repository.IMessageRepository
 import com.example.messenger.domain.repository.ISyncRepository
@@ -46,6 +48,12 @@ abstract class RepositoryModule {
     abstract fun bindMediaRepository(
         impl: MediaRepositoryImpl
     ): IMediaRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindClipRepository(
+        impl: ClipRepositoryImpl
+    ): IClipRepository
 
     @Binds
     @Singleton

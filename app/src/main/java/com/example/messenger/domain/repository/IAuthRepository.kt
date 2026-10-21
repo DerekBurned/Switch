@@ -16,6 +16,7 @@ interface IAuthRepository {
     ): Resource<User>
 
     suspend fun logout()
+    suspend fun deleteAccount(): Result<Unit>
     fun getCurrentUser(): User?
     fun observeAuthState(): Flow<DomainUser?>
     suspend fun updateUserProfile(username: String, avatarUrl: String?): Result<Unit>

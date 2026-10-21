@@ -1,7 +1,5 @@
 package com.example.messenger.presentation.components.profile
 
-import com.example.messenger.presentation.components.common.MessengerAvatar
-import com.example.messenger.presentation.components.common.sharedElementKey
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +21,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,16 +30,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
-import com.example.messenger.presentation.state.ChatUserProfileUiState
-import com.example.messenger.presentation.state.MediaTab
-import androidx.compose.material3.Surface
-import androidx.compose.ui.tooling.preview.Preview
+import com.example.messenger.domain.featureflag.FeatureFlag
 import com.example.messenger.domain.model.PhoneNumber
 import com.example.messenger.domain.model.User
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
+import com.example.messenger.presentation.components.common.MessengerAvatar
+import com.example.messenger.presentation.components.common.sharedElementKey
+import com.example.messenger.presentation.featureflag.featureEnabled
+import com.example.messenger.presentation.screens.chatuserprofile.ChatUserProfileUiState
+import com.example.messenger.presentation.screens.chatuserprofile.MediaTab
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.messengerTokens
+import com.example.messenger.util.DELETED_USER_NAME
+import com.example.messenger.util.DateUtils
 
 @Composable
 fun ProfileHeader(
@@ -59,16 +63,22 @@ fun ProfileHeader(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val deleted = state.user?.deleted == true
         val displayName = state.displayName.ifBlank { state.user?.username.orEmpty() }
         MessengerAvatar(
             name = displayName,
-            photoUrl = state.seededAvatarUrl ?: state.user?.avatarUrl ?: state.avatarPhotos.firstOrNull(),
+            photoUrl = if (deleted) {
+                null
+            } else {
+                state.seededAvatarUrl ?: state.user?.avatarUrl ?: state.avatarPhotos.firstOrNull()
+            },
+            deleted = deleted,
             size = 112.dp,
             modifier = sharedAvatarModifier.clickable(onClick = onAvatarClick),
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            text = displayName.ifBlank { "Unknown" },
+            text = displayName.ifBlank { DELETED_USER_NAME },
             color = tokens.textPrimary,
             fontSize = 20.sp,
             fontWeight = FontWeight.SemiBold,
@@ -76,30 +86,42 @@ fun ProfileHeader(
         )
         Spacer(Modifier.height(2.dp))
         Text(
-            text = if (state.isOnline) "online" else state.lastSeen.ifBlank { "offline" },
+            text = when {
+                deleted -> DateUtils.LAST_SEEN_DELETED
+                state.isOnline -> "online"
+                else -> state.lastSeen.ifBlank { "offline" }
+            },
             color = if (state.isOnline) tokens.callAccept else tokens.textPrimary.copy(alpha = 0.6f),
             fontSize = 13.sp,
         )
         Spacer(Modifier.height(18.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            ProfileActionButton(icon = Icons.Default.Call, contentDescription = "Call") {
-                val user = state.user ?: return@ProfileActionButton
-                onCallClick(
-                    user.id,
-                    user.username.orEmpty(),
-                    user.phoneNumber?.getFullNumber().orEmpty(),
-                )
+            if (featureEnabled(FeatureFlag.CALLS)) {
+                ProfileActionButton(icon = Icons.Default.Call, contentDescription = "Call") {
+                    val user = state.user ?: return@ProfileActionButton
+                    onCallClick(
+                        user.id,
+                        user.username.orEmpty(),
+                        user.phoneNumber?.getFullNumber().orEmpty(),
+                    )
+                }
             }
-            ProfileActionButton(icon = Icons.Default.Videocam, contentDescription = "Video call") {
-                val user = state.user ?: return@ProfileActionButton
-                onVideoCallClick(
-                    user.id,
-                    user.username.orEmpty(),
-                    user.phoneNumber?.getFullNumber().orEmpty(),
-                )
+            if (featureEnabled(FeatureFlag.CALLS_VIDEO)) {
+                ProfileActionButton(icon = Icons.Default.Videocam, contentDescription = "Video call") {
+                    val user = state.user ?: return@ProfileActionButton
+                    onVideoCallClick(
+                        user.id,
+                        user.username.orEmpty(),
+                        user.phoneNumber?.getFullNumber().orEmpty(),
+                    )
+                }
             }
-            ProfileActionButton(icon = Icons.Default.Notifications, contentDescription = "Mute") { }
-            ProfileActionButton(icon = Icons.Default.Block, contentDescription = "Block", danger = true) { }
+            if (featureEnabled(FeatureFlag.PARTNER_PROFILE_MUTE)) {
+                ProfileActionButton(icon = Icons.Default.Notifications, contentDescription = "Mute") { }
+            }
+            if (featureEnabled(FeatureFlag.PARTNER_PROFILE_BLOCK)) {
+                ProfileActionButton(icon = Icons.Default.Block, contentDescription = "Block", danger = true) { }
+            }
         }
     }
 }
@@ -156,9 +178,9 @@ private fun ContactInfoRow(label: String, value: String, divider: Boolean) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        Text(label, color = tokens.textOnField.copy(alpha = 0.6f), fontSize = 11.sp)
+        Text(label, color = tokens.textMuted, fontSize = 11.sp)
         Spacer(Modifier.height(2.dp))
-        Text(value, color = tokens.textOnField, fontSize = 14.sp)
+        Text(value, color = tokens.textPrimary, fontSize = 14.sp)
     }
     if (divider) HorizontalDivider(color = tokens.divider, thickness = 0.5.dp)
 }
@@ -183,7 +205,7 @@ fun MediaTabsRow(active: MediaTab, onChange: (MediaTab) -> Unit) {
             ) {
                 Text(
                     text = tab.name.lowercase().replaceFirstChar { it.uppercase() },
-                    color = if (isActive) tokens.onAccent else tokens.textOnField.copy(alpha = 0.7f),
+                    color = if (isActive) tokens.onAccent else tokens.textMuted,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                 )

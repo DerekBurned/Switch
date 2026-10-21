@@ -1,12 +1,8 @@
 package com.example.messenger.presentation.components.common
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material3.Surface
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -26,6 +22,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -36,11 +33,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.messenger.presentation.screens.ui.theme.Dimens
-import com.example.messenger.presentation.screens.ui.theme.MessengerShapes
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
+import com.example.messenger.presentation.theme.Dimens
+import com.example.messenger.presentation.theme.MessengerShapes
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.messengerTokens
 
 @Composable
 fun NavHeaderPill(

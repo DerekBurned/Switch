@@ -12,22 +12,23 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.telecom.DisconnectCause
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.example.messenger.R
-import com.example.messenger.domain.model.CallSignal
-import com.example.messenger.domain.model.CallStatus
-import com.example.messenger.domain.service.CallConnectionState
+import com.example.messenger.data.remote.call.telecom.ActiveConnectionHolder
+import com.example.messenger.domain.model.call.CallConnectionState
+import com.example.messenger.domain.model.call.CallSignal
+import com.example.messenger.domain.model.call.CallStatus
 import com.example.messenger.domain.service.CallEventListener
 import com.example.messenger.domain.service.ICallService
 import com.example.messenger.domain.service.ICallSignalingService
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.ProcessLifecycleOwner
-import com.example.messenger.data.remote.call.telecom.ActiveConnectionHolder
 import com.example.messenger.presentation.IncomingCallActivity
 import com.example.messenger.presentation.MainActivity
 import com.example.messenger.presentation.notification.NotificationChannels
@@ -38,9 +39,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @AndroidEntryPoint
 class CallForegroundService : Service() {
@@ -62,6 +66,8 @@ class CallForegroundService : Service() {
     private var presenceTimeoutJob: Job? = null
     private var audioFocusRequest: AudioFocusRequest? = null
     private var hasAudioFocus: Boolean = false
+    private var proximityLock: PowerManager.WakeLock? = null
+    private var proximityJob: Job? = null
     private var ringbackTone: ToneGenerator? = null
     
     private var ringingStarted: Boolean = false
@@ -86,6 +92,17 @@ class CallForegroundService : Service() {
         super.onCreate()
         Log.d(TAG, "onCreate")
         callService.setEventListener(eventListener)
+        proximityJob = scope.launch {
+            ActiveCallHolder.state.map { call ->
+              call?.let{
+                  it.isActive && !it.localVideoOn &&
+                          !it.callEnded && !it.speakerOn
+              }
+            }.distinctUntilChanged().collect { wanted ->
+                if (wanted == true) acquireProximityLock()
+                else releaseProximityLock()
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -257,7 +274,7 @@ class CallForegroundService : Service() {
             if (status == CallStatus.ENDED && call.isActive) {
                 recordEndedCall(call)
             }
-            withTimeoutOrNull(STATUS_WRITE_TIMEOUT_MS) {
+            withTimeoutOrNull(STATUS_WRITE_TIMEOUT_MS.milliseconds) {
                 runCatching {
                     signalingService.updateCallStatus(call.calleeId, call.callId, status)
                 }.onFailure { Log.w(TAG, "Failed to write terminal status=$status", it) }
@@ -275,12 +292,7 @@ class CallForegroundService : Service() {
     }
 
     private fun stopForegroundOnly() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        } else {
-            @Suppress("DEPRECATION")
-            stopForeground(true)
-        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     private fun handleToggleMute() {
@@ -415,7 +427,7 @@ class CallForegroundService : Service() {
     private fun startRingTimeout(call: ActiveCallHolder.ActiveCall) {
         ringTimeoutJob?.cancel()
         ringTimeoutJob = scope.launch {
-            delay(RING_TIMEOUT_MS)
+            delay(RING_TIMEOUT_MS.milliseconds)
             if (ActiveCallHolder.snapshot()?.isActive == true) return@launch
             Log.d(TAG, "ring timeout fired — recording missed call")
 
@@ -461,7 +473,7 @@ class CallForegroundService : Service() {
     private fun startRequestingTimeout() {
         requestingTimeoutJob?.cancel()
         requestingTimeoutJob = scope.launch {
-            delay(REQUESTING_TIMEOUT_MS)
+            delay(REQUESTING_TIMEOUT_MS.milliseconds)
             if (ActiveCallHolder.snapshot()?.isActive == true) return@launch
             Log.d(TAG, "requesting timeout fired — callee never confirmed ringing, ending call")
             recordUnreachedCall()
@@ -485,7 +497,7 @@ class CallForegroundService : Service() {
     private fun startRingingTimeout() {
         outgoingTimeoutJob?.cancel()
         outgoingTimeoutJob = scope.launch {
-            delay(OUTGOING_TIMEOUT_MS)
+            delay(OUTGOING_TIMEOUT_MS.milliseconds)
             if (ActiveCallHolder.snapshot()?.isActive == true) return@launch
             Log.d(TAG, "ringing timeout fired — no answer, ending call")
             terminate(CallStatus.ENDED)
@@ -498,7 +510,7 @@ class CallForegroundService : Service() {
     private fun startReconnectTimeout() {
         if (reconnectTimeoutJob?.isActive == true) return
         reconnectTimeoutJob = scope.launch {
-            delay(RECONNECT_TIMEOUT_MS)
+            delay(RECONNECT_TIMEOUT_MS.milliseconds)
             val snap = ActiveCallHolder.snapshot() ?: return@launch
             if (isFullyConnected(snap)) return@launch
             Log.d(TAG, "reconnect timeout (20s) — ending call")
@@ -550,6 +562,8 @@ class CallForegroundService : Service() {
         stopPresence()
         callService.leaveChannel()
         releaseAudioFocus()
+        releaseProximityLock()
+        proximityJob = null
         val endedCall = ActiveCallHolder.snapshot()
         ActiveCallHolder.clear()
         endedCall?.let {
@@ -561,12 +575,7 @@ class CallForegroundService : Service() {
             }
             ActiveConnectionHolder.disconnect(it.callId, cause)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        } else {
-            @Suppress("DEPRECATION")
-            stopForeground(true)
-        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
@@ -603,7 +612,7 @@ class CallForegroundService : Service() {
         }
         if (!peerWasPresent || presenceTimeoutJob?.isActive == true) return
         presenceTimeoutJob = scope.launch {
-            delay(RECONNECT_TIMEOUT_MS)
+            delay(RECONNECT_TIMEOUT_MS.milliseconds)
             if (ActiveCallHolder.snapshot()?.isActive != true) return@launch
             Log.d(TAG, "peer presence gone for ${RECONNECT_TIMEOUT_MS}ms — peer app closed/crashed/offline, ending call")
             terminate(CallStatus.ENDED)
@@ -627,7 +636,7 @@ class CallForegroundService : Service() {
         if (tickerJob?.isActive == true) return
         tickerJob = scope.launch {
             while (true) {
-                delay(1000)
+                delay(1000.milliseconds)
                 ActiveCallHolder.update { it.copy(seconds = it.seconds + 1) }
             }
         }
@@ -710,38 +719,47 @@ class CallForegroundService : Service() {
         }
     }
 
+    private fun acquireProximityLock() {
+        if (proximityLock?.isHeld == true) return
+        val pm = getSystemService<PowerManager>() ?: return
+        if (!pm.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) return
+        val lock = proximityLock ?: pm.newWakeLock(
+            PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK,
+            PROXIMITY_LOCK_TAG,
+        ).also {
+            it.setReferenceCounted(false)
+            proximityLock = it
+        }
+        runCatching { lock.acquire(10*60*1000L /*10 minutes*/) }
+    }
+    private fun releaseProximityLock(){
+        proximityLock?.let {
+            if(it.isHeld){
+                runCatching {
+                    proximityLock?.release(PowerManager.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY)
+                }
+            }
+        }
+    }
     private fun acquireAudioFocus() {
         if (hasAudioFocus) return
         val am = getSystemService<AudioManager>() ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val attrs = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build()
-            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-                .setAudioAttributes(attrs)
-                .build()
-            audioFocusRequest = req
-            hasAudioFocus = am.requestAudioFocus(req) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        } else {
-            @Suppress("DEPRECATION")
-            hasAudioFocus = am.requestAudioFocus(
-                null,
-                AudioManager.STREAM_VOICE_CALL,
-                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE,
-            ) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        }
+        val attrs = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .build()
+        val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+            .setAudioAttributes(attrs)
+            .build()
+        audioFocusRequest = req
+        hasAudioFocus = am.requestAudioFocus(req) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
     }
+
 
     private fun releaseAudioFocus() {
         if (!hasAudioFocus) return
         val am = getSystemService<AudioManager>() ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
-        } else {
-            @Suppress("DEPRECATION")
-            am.abandonAudioFocus(null)
-        }
+        audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
         audioFocusRequest = null
         hasAudioFocus = false
     }
@@ -753,20 +771,20 @@ class CallForegroundService : Service() {
     ): Boolean {
         return try {
             Log.d(TAG, "startForeground (sdk=${Build.VERSION.SDK_INT}, mic=$withMicrophone, cam=$withCamera)")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                var serviceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
-                if (withMicrophone) {
+            var serviceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
+            if (withMicrophone) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     serviceType = serviceType or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
                 }
-                if (withCamera) {
+            }
+            if (withCamera) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     serviceType = serviceType or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
                 }
-                startForeground(NOTIFICATION_ID_CALL, notification, serviceType)
-                micTypeStarted = withMicrophone
-                cameraTypeStarted = withCamera
-            } else {
-                startForeground(NOTIFICATION_ID_CALL, notification)
             }
+            startForeground(NOTIFICATION_ID_CALL, notification, serviceType)
+            micTypeStarted = withMicrophone
+            cameraTypeStarted = withCamera
             true
         } catch (t: Throwable) {
 
@@ -926,6 +944,7 @@ class CallForegroundService : Service() {
 
     companion object {
         private const val TAG = "CallForegroundService"
+        private const val PROXIMITY_LOCK_TAG = "my:proximitylogtag"
         const val ACTION_START_OUTGOING = "com.example.messenger.call.START_OUTGOING"
         const val ACTION_START_INCOMING = "com.example.messenger.call.START_INCOMING"
         const val ACTION_ACCEPT = "com.example.messenger.call.ACCEPT"

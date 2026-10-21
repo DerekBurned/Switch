@@ -2,25 +2,30 @@ package com.example.messenger.data.remote.firebase
 
 import android.util.Log
 import com.example.messenger.data.crypto.E2eeMessageCodec
-import com.example.messenger.data.remote.dto.RemoteMessageDto
-import com.example.messenger.domain.model.CallType
+import com.example.messenger.data.remote.dto.message.RemoteMessageDto
 import com.example.messenger.domain.model.Conversation
 import com.example.messenger.domain.model.MediaItem
 import com.example.messenger.domain.model.Message
 import com.example.messenger.domain.model.MessageStatus
+import com.example.messenger.domain.model.RemoteUserSnapshot
 import com.example.messenger.domain.model.User
+import com.example.messenger.domain.model.call.CallType
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration
 
 @Singleton
 class FirestoreService @Inject constructor(
@@ -61,6 +66,39 @@ class FirestoreService @Inject constructor(
         }
     }
 
+    suspend fun fetchRemoteUser(uid: String): Result<RemoteUserSnapshot> {
+        return try {
+            val snapshot = usersCollection.document(uid).get().await()
+            Result.success(
+                RemoteUserSnapshot(
+                    user = snapshot.toObject(User::class.java),
+                    authoritative = !snapshot.metadata.isFromCache,
+                ),
+            )
+        } catch (e: Exception) {
+            Log.w("AUTHFLOW_FS", "fetchRemoteUser failed for $uid", e)
+            Result.failure(e)
+        }
+    }
+
+    fun observeUserProfile(uid: String): Flow<RemoteUserSnapshot> = callbackFlow {
+        val listener = usersCollection.document(uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                if (snapshot == null) return@addSnapshotListener
+                trySend(
+                    RemoteUserSnapshot(
+                        user = snapshot.toObject(User::class.java),
+                        authoritative = !snapshot.metadata.isFromCache,
+                    ),
+                )
+            }
+        awaitClose { listener.remove() }
+    }
+
     suspend fun updateUserProfile(uid: String, updates: Map<String, Any>): Result<Unit> {
         return try {
             usersCollection.document(uid).update(updates).await()
@@ -92,13 +130,13 @@ class FirestoreService @Inject constructor(
             Result.failure(e)
         }
     }
-    suspend fun sendMessage(message: Message): Result<Unit> {
+    suspend fun sendMessage(message: Message, confirmWithin: Duration? = null): Result<Unit> {
         return try {
             val dto = codec.encode(message).let {
                 if (message.status == MessageStatus.SENDING) it.copy(status = MessageStatus.SENT.name) else it
             }
             val conversationRef = conversationsCollection.document(message.conversationId)
-            conversationRef
+            val write = conversationRef
                 .collection("messages")
                 .document(dto.id)
                 .set(dto)
@@ -110,7 +148,13 @@ class FirestoreService @Inject constructor(
                         "lastMessageTimestamp" to message.timestamp,
                     ),
                 )
+            if (confirmWithin != null) {
+                withTimeoutOrNull(confirmWithin) { write.await(); true }
+                    ?: return Result.failure(TimeoutException("message ${dto.id} not confirmed within $confirmWithin"))
+            }
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e("FirestoreService", "Error sending message", e)
             Result.failure(e)
@@ -121,6 +165,7 @@ class FirestoreService @Inject constructor(
         is Message.Text -> "Message"
         is Message.Media -> previewLabel(message.copy(caption = ""))
         is Message.Call -> previewLabel(message)
+        is Message.Clip -> previewLabel(message)
     }
 
     private fun previewLabel(message: Message): String = when (message) {
@@ -135,6 +180,7 @@ class FirestoreService @Inject constructor(
                 else -> "$count media"
             }
         }
+        is Message.Clip  -> message.clip.previewLabel
         is Message.Call  -> when (message.callType) {
             CallType.MISSED    -> "Missed call"
             CallType.UNREACHED -> "Unreached call"
@@ -163,6 +209,7 @@ class FirestoreService @Inject constructor(
         is Message.Text  -> copy(deleted = true)
         is Message.Media -> copy(deleted = true)
         is Message.Call  -> copy(deleted = true)
+        is Message.Clip  -> copy(deleted = true)
     }
 
     private fun applyDeletedFor(dto: RemoteMessageDto, message: Message): Message {

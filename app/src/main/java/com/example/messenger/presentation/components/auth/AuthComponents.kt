@@ -1,18 +1,15 @@
 package com.example.messenger.presentation.components.auth
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Surface
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
-
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -22,7 +19,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.OnSurfaceMuted
 
 @Composable
 fun AuthInputTextField(
@@ -37,7 +37,7 @@ fun AuthInputTextField(
     TextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text(placeholder, color = Color.Gray) },
+        placeholder = { Text(placeholder, color = OnSurfaceMuted) },
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)

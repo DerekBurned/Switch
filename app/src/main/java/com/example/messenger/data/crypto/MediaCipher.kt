@@ -1,6 +1,9 @@
 package com.example.messenger.data.crypto
 
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption.ATOMIC_MOVE
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
@@ -30,7 +33,8 @@ object MediaCipher {
     }
 
     fun decrypt(key: ByteArray, source: File, dest: File) {
-        val part = File(dest.parentFile, dest.name + ".part")
+        dest.parentFile?.mkdirs()
+        val part = File.createTempFile(dest.name + ".", ".part", dest.parentFile)
         try {
             source.inputStream().use { input ->
                 val nonce = ByteArray(NONCE_SIZE)
@@ -43,11 +47,9 @@ object MediaCipher {
                     CipherInputStream(input, cipher).use { it.copyTo(out) }
                 }
             }
-            dest.delete()
-            check(part.renameTo(dest)) { "rename failed" }
+            Files.move(part.toPath(), dest.toPath(), ATOMIC_MOVE, REPLACE_EXISTING)
         } catch (e: Exception) {
             part.delete()
-            dest.delete()
             throw e
         }
     }

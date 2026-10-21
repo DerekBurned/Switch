@@ -1,6 +1,5 @@
 package com.example.messenger.presentation.components.chat
 
-import com.example.messenger.presentation.components.common.MessageStatusIcon
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,15 +25,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.messenger.domain.featureflag.FeatureFlag
 import com.example.messenger.domain.model.MessageStatus
-import com.example.messenger.presentation.screens.ui.theme.BubbleReceived
-import com.example.messenger.presentation.screens.ui.theme.BubbleReceivedText
-import com.example.messenger.presentation.screens.ui.theme.BubbleSent
+import com.example.messenger.presentation.components.common.MessageStatusIcon
+import com.example.messenger.presentation.featureflag.featureEnabled
+import com.example.messenger.presentation.theme.BubbleReceived
+import com.example.messenger.presentation.theme.BubbleReceivedText
+import com.example.messenger.presentation.theme.BubbleSent
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.OnSurfaceMuted
 import com.example.messenger.util.DateUtils
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
 
 @Composable
 fun MissedCallCard(
@@ -48,7 +51,7 @@ fun MissedCallCard(
 ) {
 
     val titleColor = if (isMe) Color.White else BubbleReceivedText
-    val subtitleColor = if (isMe) Color.White.copy(alpha = 0.8f) else Color.Gray
+    val subtitleColor = if (isMe) Color.White.copy(alpha = 0.8f) else OnSurfaceMuted
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -57,6 +60,7 @@ fun MissedCallCard(
     ) {
         Surface(
             onClick = onCall,
+            enabled = featureEnabled(if (video) FeatureFlag.CALLS_VIDEO else FeatureFlag.CALLS),
             shape = RoundedCornerShape(18.dp),
             color = if (isMe) BubbleSent else BubbleReceived,
             shadowElevation = 1.dp,
@@ -119,7 +123,7 @@ fun EndedCallCard(
     video: Boolean = false,
 ) {
     val titleColor = if (isMe) Color.White else BubbleReceivedText
-    val subtitleColor = if (isMe) Color.White.copy(alpha = 0.8f) else Color.Gray
+    val subtitleColor = if (isMe) Color.White.copy(alpha = 0.8f) else OnSurfaceMuted
     Row(
         modifier = modifier
             .fillMaxWidth()

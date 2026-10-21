@@ -23,10 +23,12 @@ class SendMessageUseCase @Inject constructor(
        try {
             if (text.isBlank()) {
                 emit(Resource.Error("Message is empty"))
+                return@flow
             }
 
             if (text.length > 5000) {
                 emit(Resource.Error("Message is too long"))
+                return@flow
             }
 
             val currentUser = getCurrentUserUseCase()
@@ -44,11 +46,7 @@ class SendMessageUseCase @Inject constructor(
                 timestamp = System.currentTimeMillis(),
                 status = MessageStatus.SENDING,
                 replyToMessageId = replyTo?.id,
-                replyToText = when (replyTo) {
-                    is Message.Text  -> replyTo.text.take(REPLY_SNIPPET_MAX)
-                    is Message.Media -> replyTo.caption.take(REPLY_SNIPPET_MAX).ifBlank { "Media" }
-                    is Message.Call, null -> null
-                },
+                replyToText = replyTo?.replySnippet(),
                 replyToSenderId = replyTo?.senderId,
             )
            val result = messageRepository.sendMessage(message)
@@ -63,10 +61,5 @@ class SendMessageUseCase @Inject constructor(
         }catch (e : Exception){
             emit(Resource.Error(e.message?: "Internal error occurred"))
         }
-    }
-
-    private companion object {
-        
-        const val REPLY_SNIPPET_MAX = 200
     }
 }

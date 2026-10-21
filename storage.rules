@@ -2,6 +2,30 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    function isChatParticipant(conversationId) {
+      return request.auth != null
+             && request.auth.uid in firestore.get(
+                  /databases/(default)/documents/conversations/$(conversationId)).data.participantIds;
+    }
+
+    function isChatMediaType() {
+      return request.resource.contentType == 'application/octet-stream'
+             || request.resource.contentType.matches('(image|video|audio)/.*');
+    }
+
+    function withinChatMediaLimit(fileName) {
+      return (fileName.matches('clip[.].*') && request.resource.size <= 40 * 1024 * 1024)
+             || (!fileName.matches('clip[.].*') && request.resource.size <= 100 * 1024 * 1024);
+    }
+
+    match /chatMedia/{conversationId}/{messageId}/{fileName} {
+      allow read: if isChatParticipant(conversationId);
+      allow create, update: if isChatParticipant(conversationId)
+                            && withinChatMediaLimit(fileName)
+                            && isChatMediaType();
+      allow delete: if isChatParticipant(conversationId);
+    }
+
     match /avatars/{userId}/{fileName} {
       allow read: if request.auth != null;
 

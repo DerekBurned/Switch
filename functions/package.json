@@ -2,6 +2,7 @@
   "name": "messenger-functions",
   "version": "1.0.0",
   "description": "Cloud Functions that fan out FCM pushes for new messages and incoming calls.",
+  "license": "AGPL-3.0-only",
   "main": "lib/index.js",
   "scripts": {
     "lint": "eslint --ext .ts,.js src",

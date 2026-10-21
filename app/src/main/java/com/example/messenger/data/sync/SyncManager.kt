@@ -2,7 +2,14 @@ package com.example.messenger.data.sync
 
 import android.content.Context
 import androidx.lifecycle.LifecycleOwner
-import androidx.work.*
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -24,10 +31,14 @@ class SyncManager @Inject constructor(
             .build()
 
         workManager.enqueueUniquePeriodicWork(
-            "MessengerSync",
+            PERIODIC_WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
             syncRequest
         )
+    }
+
+    fun cancelPeriodicSync() {
+        workManager.cancelUniqueWork(PERIODIC_WORK_NAME)
     }
 
     fun triggerOneTimeSync() {
@@ -41,5 +52,9 @@ class SyncManager @Inject constructor(
             .build()
 
         workManager.enqueue(request)
+    }
+
+    private companion object {
+        const val PERIODIC_WORK_NAME = "MessengerSync"
     }
 }

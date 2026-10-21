@@ -1,26 +1,23 @@
 package com.example.messenger.presentation.components.auth
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Surface
-import androidx.compose.material3.MaterialTheme
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
-
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,10 +27,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-enum class AuthMode { LOGIN, REGISTER }
+import com.example.messenger.presentation.components.auth.model.AuthMode
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.messengerTokens
 
 private val ToggleWidth = 260.dp
 private val TogglePadding = 4.dp
@@ -45,6 +44,7 @@ fun AuthModeToggle(
     onModeChange: (AuthMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tokens = messengerTokens
     val pillOffset by animateDpAsState(
         targetValue = if (mode == AuthMode.LOGIN) 0.dp else HalfWidth,
         animationSpec = tween(durationMillis = 220),
@@ -56,7 +56,7 @@ fun AuthModeToggle(
             .width(ToggleWidth)
             .height(44.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(Color.White.copy(alpha = 0.2f))
+            .background(tokens.trackFill)
             .padding(TogglePadding),
     ) {
         Box(
@@ -65,7 +65,7 @@ fun AuthModeToggle(
                 .width(HalfWidth)
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(20.dp))
-                .background(Color.White),
+                .background(tokens.pillFillSelected),
         )
         Row {
             ToggleHalf(
@@ -88,8 +88,9 @@ private fun ToggleHalf(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
+    val tokens = messengerTokens
     val textColor by animateColorAsState(
-        targetValue = if (selected) Color(0xFF16141B) else Color.White,
+        targetValue = if (selected) tokens.textOnField else tokens.textPrimary,
         animationSpec = tween(durationMillis = 220),
         label = "auth-toggle-text",
     )

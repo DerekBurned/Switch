@@ -26,6 +26,16 @@ service cloud.firestore {
       return t in ['MISSED_CALL', 'UNREACHED_CALL', 'ENDED_CALL'];
     }
 
+    function isClipType(t) {
+      return t in ['VOICE_CLIP', 'VIDEO_CLIP'];
+    }
+
+    function hasValidClip(data) {
+      return isClipType(data.get('type', 'TEXT'))
+             && data.get('clip', null) is map
+             && isValidString(data.clip.get('url', ''), 2048);
+    }
+
     // An E2EE-encrypted body carries ciphertext/nonce instead of plaintext text.
     function isEncryptedBody(data) {
       return data.get('enc', 0) == 1
@@ -36,11 +46,13 @@ service cloud.firestore {
 
     // A message's body is valid when it is a text message with non-empty text,
     // a media message carrying at least one item (caption may be empty), a
-    // call event (which has no text body), or an E2EE-encrypted envelope.
+    // call event (which has no text body), a clip with an uploaded file, or an
+    // E2EE-encrypted envelope.
     function hasValidMessageBody(data) {
       return isValidString(data.text, 5000)
              || (data.get('type', 'TEXT') == 'MEDIA' && data.get('mediaItems', []).size() > 0)
              || isCallType(data.get('type', 'TEXT'))
+             || hasValidClip(data)
              || isEncryptedBody(data);
     }
 
@@ -104,9 +116,10 @@ service cloud.firestore {
           && request.resource.data.id == userId;
 
       allow update: if isOwner(userId)
-          && request.resource.data.id == resource.data.id;
+          && request.resource.data.id == resource.data.id
+          && resource.data.get('deleted', false) == false;
 
-      allow delete: if isOwner(userId);
+      allow delete: if false;
     }
 
     // ── /users/{userId}/contactAliases/{aliasId} ───────────────────────────────────────────

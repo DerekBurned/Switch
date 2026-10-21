@@ -1,7 +1,7 @@
 package com.example.messenger.data.presence
 
 import android.util.Log
-import com.example.messenger.domain.model.PresenceState
+import com.example.messenger.domain.model.presence.PresenceState
 import com.example.messenger.domain.service.IPresenceService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -59,6 +59,8 @@ class PresenceManager @Inject constructor(
     }
 
     fun disconnect(scope: CoroutineScope) {
+        collector?.cancel()
+        collector = null
         offlineTimerJob?.cancel()
         offlineTimerJob = null
 

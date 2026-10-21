@@ -1,7 +1,7 @@
 package com.example.messenger.domain.service
 
-import com.example.messenger.domain.model.PresenceState
-import com.example.messenger.domain.model.UserPresence
+import com.example.messenger.domain.model.presence.PresenceState
+import com.example.messenger.domain.model.presence.UserPresence
 import kotlinx.coroutines.flow.Flow
 
 interface IPresenceService {

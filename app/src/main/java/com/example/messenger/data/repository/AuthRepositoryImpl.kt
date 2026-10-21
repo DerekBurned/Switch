@@ -2,25 +2,37 @@ package com.example.messenger.data.repository
 
 import android.util.Log
 import com.example.messenger.data.crypto.E2eeBootstrap
+import com.example.messenger.data.remote.auth.AccountDeletionService
 import com.example.messenger.data.remote.auth.FirebaseAuthService
 import com.example.messenger.data.remote.firebase.FirestoreService
 import com.example.messenger.domain.model.DomainUser
 import com.example.messenger.domain.model.User
 import com.example.messenger.domain.repository.IAuthRepository
+import com.example.messenger.domain.service.IAuthFlowGate
 import com.example.messenger.util.Resource
 import com.google.firebase.auth.PhoneAuthCredential
-import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuthService,
     private val firestore: FirestoreService,
     private val e2eeBootstrap: E2eeBootstrap,
+    private val authFlowGate: IAuthFlowGate,
+    private val accountDeletion: AccountDeletionService,
 ) : IAuthRepository {
 
     override suspend fun loginWithPhone(
+        credential: PhoneAuthCredential,
+        username: String?,
+        isRegistration: Boolean,
+    ): Resource<User> = authFlowGate.withAuthFlow {
+        performLoginWithPhone(credential, username, isRegistration)
+    }
+
+    private suspend fun performLoginWithPhone(
         credential: PhoneAuthCredential,
         username: String?,
         isRegistration: Boolean,
@@ -31,6 +43,12 @@ class AuthRepositoryImpl @Inject constructor(
             Log.d(TAG, "loginWithPhone: signed in uid=${firebaseUser.uid}")
             val existing = firestore.getUserProfile(firebaseUser.uid).getOrNull()
             Log.d(TAG, "loginWithPhone: existing profile=${existing != null}")
+
+            if (existing?.deleted == true) {
+                Log.w(TAG, "loginWithPhone: profile is tombstoned — rejecting")
+                auth.logout()
+                return Resource.Error("This account has been deleted.")
+            }
 
             if (existing != null) {
                 if (isRegistration) {
@@ -92,6 +110,8 @@ class AuthRepositoryImpl @Inject constructor(
             emit(Resource.Error("${e.message}, Internal error occurred"))
         }
     }
+
+    override suspend fun deleteAccount(): Result<Unit> = accountDeletion.deleteAccount()
 
     override suspend fun logout() {
         return auth.logout()

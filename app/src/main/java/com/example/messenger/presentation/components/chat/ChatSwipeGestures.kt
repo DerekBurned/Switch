@@ -24,6 +24,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.example.messenger.domain.featureflag.FeatureFlag
+import com.example.messenger.presentation.featureflag.featureEnabled
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -59,6 +61,7 @@ fun SwipeToReply(
     enabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    val swipeEnabled = enabled && featureEnabled(FeatureFlag.MESSAGE_SWIPE_REPLY)
     val density = LocalDensity.current
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
@@ -83,8 +86,8 @@ fun SwipeToReply(
         Box(
             modifier = Modifier
                 .offset { IntOffset(offsetX.value.roundToInt(), 0) }
-                .pointerInput(enabled) {
-                    if (!enabled) return@pointerInput
+                .pointerInput(swipeEnabled) {
+                    if (!swipeEnabled) return@pointerInput
                     val slop = viewConfiguration.touchSlop
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
@@ -100,6 +103,7 @@ fun SwipeToReply(
                             val dx = change.position.x - startX
                             val dy = change.position.y - startY
                             if (!claimed) {
+                                if (change.isConsumed) break
                                 if (dx > slop && dx > abs(dy)) {
                                     claimed = true
                                 } else if (dx < -slop || abs(dy) > slop) {

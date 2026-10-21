@@ -6,8 +6,6 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import com.example.messenger.domain.model.MediaItem
-import com.example.messenger.presentation.state.GalleryFilter
-import com.example.messenger.presentation.state.GalleryItem
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

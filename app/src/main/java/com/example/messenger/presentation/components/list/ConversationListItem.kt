@@ -1,8 +1,5 @@
 package com.example.messenger.presentation.components.list
 
-import com.example.messenger.presentation.components.common.MessengerAvatar
-import com.example.messenger.presentation.components.common.PresenceIndicator
-import com.example.messenger.presentation.components.common.sharedElementKey
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,15 +29,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.messenger.domain.model.Conversation
-import com.example.messenger.domain.model.UserPresence
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
+import com.example.messenger.domain.model.presence.UserPresence
+import com.example.messenger.presentation.components.common.MessengerAvatar
+import com.example.messenger.presentation.components.common.PresenceIndicator
+import com.example.messenger.presentation.components.common.sharedElementKey
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.messengerTokens
 import com.example.messenger.util.DateUtils
 
 @Composable
@@ -50,6 +50,7 @@ fun ConversationListItem(
     currentUserId: String,
     onClick: () -> Unit,
     photoUrl: String? = null,
+    partnerDeleted: Boolean = false,
 ) {
     val tokens = messengerTokens
     Column(
@@ -68,7 +69,13 @@ fun ConversationListItem(
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ConversationAvatar(partnerId = partnerId, displayName = displayName, presence = presence, photoUrl = photoUrl)
+            ConversationAvatar(
+                partnerId = partnerId,
+                displayName = displayName,
+                presence = if (partnerDeleted) null else presence,
+                photoUrl = photoUrl,
+                deleted = partnerDeleted,
+            )
             Spacer(modifier = Modifier.width(14.dp))
             ConversationPreview(
                 displayName = displayName,
@@ -93,12 +100,19 @@ fun ConversationListItem(
 }
 
 @Composable
-private fun ConversationAvatar(partnerId: String, displayName: String, presence: UserPresence?, photoUrl: String?) {
+private fun ConversationAvatar(
+    partnerId: String,
+    displayName: String,
+    presence: UserPresence?,
+    photoUrl: String?,
+    deleted: Boolean,
+) {
     Box(contentAlignment = Alignment.BottomEnd) {
         MessengerAvatar(
             name = displayName,
             photoUrl = photoUrl,
             size = 52.dp,
+            deleted = deleted,
             modifier = Modifier.sharedElementKey("avatar-$partnerId"),
         )
         if (presence != null) {

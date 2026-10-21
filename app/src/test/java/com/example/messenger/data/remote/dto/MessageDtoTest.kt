@@ -4,6 +4,8 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
+import com.example.messenger.data.remote.dto.message.RemoteMessageDto
+import com.example.messenger.data.remote.dto.message.toDomain
 import com.example.messenger.domain.model.Message
 import com.example.messenger.domain.model.MessageStatus
 import org.junit.jupiter.api.Test

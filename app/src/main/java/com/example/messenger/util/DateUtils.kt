@@ -24,6 +24,8 @@ object DateUtils {
     private fun time(): SimpleDateFormat = timeFormat.get()!!
     private fun date(): SimpleDateFormat = dateFormat.get()!!
 
+    const val LAST_SEEN_DELETED = "Last seen long time ago"
+
     fun formatLastSeen(timestamp: Long): String {
         if (timestamp <= 0L) return "Offline"
 

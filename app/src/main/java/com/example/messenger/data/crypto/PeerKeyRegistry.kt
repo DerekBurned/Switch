@@ -1,5 +1,6 @@
 package com.example.messenger.data.crypto
 
+import com.example.messenger.data.crypto.model.PeerKey
 import com.example.messenger.data.local.obx.ObxPeerKey
 import com.example.messenger.data.local.obx.ObxPeerKey_
 import com.google.firebase.firestore.FirebaseFirestore
@@ -8,8 +9,6 @@ import io.objectbox.Box
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
-
-class PeerKey(val uid: String, val publicKey: ByteArray, val epoch: Int, val verified: Boolean)
 
 @Singleton
 class PeerKeyRegistry @Inject constructor(

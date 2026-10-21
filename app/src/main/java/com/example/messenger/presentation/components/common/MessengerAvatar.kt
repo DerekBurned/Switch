@@ -1,20 +1,18 @@
 package com.example.messenger.presentation.components.common
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Surface
-import androidx.compose.material3.MaterialTheme
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -28,8 +26,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.BitmapImage
 import coil3.SingletonImageLoader
@@ -37,9 +38,13 @@ import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.example.messenger.R
+import com.example.messenger.presentation.components.common.model.MotionSprings
+import com.example.messenger.presentation.theme.Dimens
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.avatarColorFor
+import com.example.messenger.presentation.theme.messengerTokens
 import kotlinx.coroutines.launch
-import com.example.messenger.presentation.screens.ui.theme.Dimens
-import com.example.messenger.presentation.screens.ui.theme.avatarColorFor
 
 @Composable
 fun MessengerAvatar(
@@ -47,7 +52,12 @@ fun MessengerAvatar(
     modifier: Modifier = Modifier,
     photoUrl: String? = null,
     size: Dp = Dimens.avatarMedium,
+    deleted: Boolean = false,
 ) {
+    if (deleted) {
+        DeletedAvatar(modifier = modifier, size = size)
+        return
+    }
     val context = LocalContext.current
     Box(
         modifier = modifier
@@ -106,6 +116,25 @@ fun MessengerAvatar(
                     },
             )
         }
+    }
+}
+
+@Composable
+private fun DeletedAvatar(modifier: Modifier, size: Dp) {
+    val tokens = messengerTokens
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(tokens.neutralButtonFill),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_avatar_deleted),
+            contentDescription = null,
+            tint = tokens.textMuted,
+            modifier = Modifier.size(size * 0.55f),
+        )
     }
 }
 

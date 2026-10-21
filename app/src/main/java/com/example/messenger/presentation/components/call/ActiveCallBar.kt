@@ -3,12 +3,17 @@ package com.example.messenger.presentation.components.call
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -32,11 +37,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CallEnd
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,7 +66,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.messenger.data.remote.call.ActiveCallHolder
 import com.example.messenger.data.remote.call.CallForegroundService
 import com.example.messenger.di.UiEntryPoints
-import com.example.messenger.domain.service.CallConnectionState
+import com.example.messenger.domain.model.call.CallConnectionState
+import com.example.messenger.presentation.components.call.model.CallBarMode
+import com.example.messenger.presentation.components.common.LocalClipBarInset
 import com.example.messenger.presentation.components.common.MessengerAvatar
 import com.example.messenger.util.resolveDisplayName
 import dagger.hilt.android.EntryPointAccessors
@@ -99,7 +101,7 @@ internal fun callBarStatus(call: ActiveCallHolder.ActiveCall): String = when {
 fun CallAwareTopBar(topBar: @Composable () -> Unit) {
     Column(modifier = Modifier.background(Color.Transparent)) {
         topBar()
-        Spacer(modifier = Modifier.height(LocalCallBarInset.current))
+        Spacer(modifier = Modifier.height(LocalCallBarInset.current + LocalClipBarInset.current))
     }
 }
 
@@ -197,7 +199,7 @@ fun ActiveCallBar(
                                     dragY.animateTo(-hideTargetPx, tween(160))
                                     CallBarPresenter.hide()
                                 }
-                                offset >= bubbleThresholdPx -> {
+                                offset >= bubbleThresholdPx && CallBarPresenter.floatingEnabled -> {
                                     CallBarPresenter.bubbleOffset = Offset(
                                         x = bubbleSpawnX,
                                         y = barHomeTopPx + dragY.value,

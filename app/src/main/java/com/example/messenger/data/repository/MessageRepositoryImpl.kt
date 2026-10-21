@@ -1,19 +1,18 @@
-﻿package com.example.messenger.data.repository
+package com.example.messenger.data.repository
 
 import com.example.messenger.data.local.obx.ObxConversation
 import com.example.messenger.data.local.obx.ObxConversation_
 import com.example.messenger.data.local.obx.ObxMessage
 import com.example.messenger.data.local.obx.ObxMessage_
 import com.example.messenger.data.local.obx.ObxSyncQueueItem
-import com.example.messenger.data.local.obx.asFlow
+import com.example.messenger.data.local.obx.mappers.toDomain
+import com.example.messenger.data.local.obx.mappers.toObx
 import com.example.messenger.data.local.obx.queryFlow
-import com.example.messenger.data.local.obx.toDomain
-import com.example.messenger.data.local.obx.toObx
 import com.example.messenger.data.remote.firebase.FirestoreService
-import com.example.messenger.domain.model.CallType
 import com.example.messenger.domain.model.MediaItem
 import com.example.messenger.domain.model.Message
 import com.example.messenger.domain.model.MessageStatus
+import com.example.messenger.domain.model.call.CallType
 import com.example.messenger.domain.model.sync.SyncAction
 import com.example.messenger.domain.repository.IMessageRepository
 import io.objectbox.Box
@@ -187,6 +186,7 @@ class MessageRepositoryImpl @Inject constructor(
                     if (local.isRead) incoming.isRead = true
                     if (local.status == MessageStatus.READ.name) incoming.status = MessageStatus.READ.name
                     if (local.deleted) incoming.deleted = true
+                    if (local.clipPlayed) incoming.clipPlayed = true
                 }
             }
         }
@@ -218,6 +218,7 @@ class MessageRepositoryImpl @Inject constructor(
                 else -> "$count media"
             }
         }
+        is Message.Clip  -> message.clip.previewLabel
         is Message.Call  -> when (message.callType) {
             CallType.MISSED    -> "Missed call"
             CallType.UNREACHED -> "Unreached call"
@@ -229,5 +230,6 @@ class MessageRepositoryImpl @Inject constructor(
         is Message.Text  -> copy(status = newStatus)
         is Message.Media -> copy(status = newStatus)
         is Message.Call  -> copy(status = newStatus)
+        is Message.Clip  -> copy(status = newStatus)
     }
 }

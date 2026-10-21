@@ -1,18 +1,22 @@
 package com.example.messenger.di
 
-import com.example.messenger.data.local.repository.ILocalRepository
 import com.example.messenger.data.sync.NetworkObserver
 import com.example.messenger.domain.repository.IAuthRepository
+import com.example.messenger.domain.repository.IClipRepository
 import com.example.messenger.domain.repository.IConversationRepository
+import com.example.messenger.domain.repository.ILocalRepository
 import com.example.messenger.domain.repository.IMessageRepository
 import com.example.messenger.domain.repository.ISyncRepository
 import com.example.messenger.domain.repository.IUserRepository
+import com.example.messenger.domain.service.IAuthFlowGate
 import com.example.messenger.domain.service.ISessionCleaner
+import com.example.messenger.domain.usecase.auth.DeleteAccountUseCase
 import com.example.messenger.domain.usecase.auth.GetCurrentUserUseCase
 import com.example.messenger.domain.usecase.auth.LinkPhoneUseCase
 import com.example.messenger.domain.usecase.auth.LoginWithPhoneNumberUseCase
 import com.example.messenger.domain.usecase.auth.LogoutUseCase
 import com.example.messenger.domain.usecase.auth.ObserveAuthStateUseCase
+import com.example.messenger.domain.usecase.auth.ObserveSessionStateUseCase
 import com.example.messenger.domain.usecase.conversation.ClearConversationForMeUseCase
 import com.example.messenger.domain.usecase.conversation.CreateConversationUseCase
 import com.example.messenger.domain.usecase.conversation.DeleteConversationForEveryoneUseCase
@@ -26,6 +30,7 @@ import com.example.messenger.domain.usecase.message.GetMessagesUseCase
 import com.example.messenger.domain.usecase.message.MarkMessageAsReadUseCase
 import com.example.messenger.domain.usecase.message.SendMessageUseCase
 import com.example.messenger.domain.usecase.message.SyncMessagesUseCase
+import com.example.messenger.domain.usecase.sync.BackfillRecentHistoryUseCase
 import com.example.messenger.domain.usecase.sync.ObserveNetworkUseCase
 import com.example.messenger.domain.usecase.sync.ProcessSyncQueueUseCase
 import com.example.messenger.domain.usecase.sync.SyncAllDataUseCase
@@ -53,6 +58,23 @@ object UseCaseModule {
         return LoginWithPhoneNumberUseCase(repository)
     }
     @Provides
+    fun provideDeleteAccountUseCase(
+        authRepository: IAuthRepository,
+        localRepository: ILocalRepository,
+        sessionCleaner: ISessionCleaner,
+    ): DeleteAccountUseCase {
+        return DeleteAccountUseCase(authRepository, localRepository, sessionCleaner)
+    }
+
+    @Provides
+    fun provideBackfillRecentHistoryUseCase(
+        conversationRepository: IConversationRepository,
+        messageRepository: IMessageRepository,
+    ): BackfillRecentHistoryUseCase {
+        return BackfillRecentHistoryUseCase(conversationRepository, messageRepository)
+    }
+
+    @Provides
     fun provideLogoutUseCase(
         authRepository: IAuthRepository,
         userRepository: IUserRepository,
@@ -67,6 +89,15 @@ object UseCaseModule {
         authRepository: IAuthRepository
     ): LinkPhoneUseCase {
         return LinkPhoneUseCase(authRepository)
+    }
+
+    @Provides
+    fun provideObserveSessionStateUseCase(
+        observeAuthState: ObserveAuthStateUseCase,
+        userRepository: IUserRepository,
+        authFlowGate: IAuthFlowGate,
+    ): ObserveSessionStateUseCase {
+        return ObserveSessionStateUseCase(observeAuthState, userRepository, authFlowGate)
     }
 
     @Provides
@@ -136,9 +167,10 @@ object UseCaseModule {
 
     @Provides
     fun provideDeleteMessageUseCase(
-        messageRepository: IMessageRepository
+        messageRepository: IMessageRepository,
+        clipRepository: IClipRepository,
     ): DeleteMessageUseCase {
-        return DeleteMessageUseCase(messageRepository)
+        return DeleteMessageUseCase(messageRepository, clipRepository)
     }
 
     @Provides

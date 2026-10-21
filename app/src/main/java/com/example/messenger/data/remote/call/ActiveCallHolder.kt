@@ -1,6 +1,6 @@
 package com.example.messenger.data.remote.call
 
-import com.example.messenger.domain.service.CallConnectionState
+import com.example.messenger.domain.model.call.CallConnectionState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

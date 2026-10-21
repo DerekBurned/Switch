@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.messenger.presentation.screens.ui.theme.LightGray
+import com.example.messenger.presentation.theme.LightGray
 
 @Composable
 fun CameraPreviewCell(

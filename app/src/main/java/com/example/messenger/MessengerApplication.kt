@@ -6,9 +6,9 @@ import android.os.Build
 import android.os.ProfilingManager
 import android.os.ProfilingTrigger
 import android.util.Log
+import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
-import androidx.hilt.work.HiltWorkerFactory
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
@@ -22,9 +22,11 @@ import com.example.messenger.data.crypto.E2eeBootstrap
 import com.example.messenger.data.presence.AppLifecycleObserver
 import com.example.messenger.data.remote.call.IncomingCallCoordinator
 import com.example.messenger.data.remote.call.telecom.TelecomCallManager
+import com.example.messenger.data.remote.firebase.CrashlyticsUserSync
 import com.example.messenger.data.remote.firebase.FcmTokenSyncer
 import com.example.messenger.data.sync.SyncCoordinator
 import com.example.messenger.data.sync.SyncManager
+import com.example.messenger.domain.featureflag.FeatureFlags
 import com.example.messenger.presentation.notification.NotificationChannels
 import dagger.hilt.android.HiltAndroidApp
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -58,8 +60,15 @@ class MessengerApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var e2eeBootstrap: E2eeBootstrap
 
+    @Inject
+    lateinit var featureFlags: FeatureFlags
+
+    @Inject
+    lateinit var crashlyticsUserSync: CrashlyticsUserSync
+
     override fun onCreate() {
         super.onCreate()
+        featureFlags.start()
 
         SingletonImageLoader.setSafe { context ->
             ImageLoader.Builder(context)
@@ -102,6 +111,7 @@ class MessengerApplication : Application(), Configuration.Provider {
         syncCoordinator.start()
         syncManager.schedulePeriodicSync()
         fcmTokenSyncer.start()
+        crashlyticsUserSync.start()
         incomingCallCoordinator.start()
         telecomCallManager.registerPhoneAccount()
         registerMemoryProfiling()

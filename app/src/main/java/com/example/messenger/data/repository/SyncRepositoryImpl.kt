@@ -5,7 +5,7 @@ import com.example.messenger.data.local.obx.ObxMessage
 import com.example.messenger.data.local.obx.ObxMessage_
 import com.example.messenger.data.local.obx.ObxSyncQueueItem
 import com.example.messenger.data.local.obx.ObxSyncQueueItem_
-import com.example.messenger.data.local.obx.toDomain
+import com.example.messenger.data.local.obx.mappers.toDomain
 import com.example.messenger.data.remote.firebase.FirestoreService
 import com.example.messenger.domain.model.MessageStatus
 import com.example.messenger.domain.model.SyncStatus
@@ -118,6 +118,7 @@ class SyncRepositoryImpl @Inject constructor(
             is com.example.messenger.domain.model.Message.Text  -> msg.copy(status = MessageStatus.SENT)
             is com.example.messenger.domain.model.Message.Media -> msg.copy(status = MessageStatus.SENT)
             is com.example.messenger.domain.model.Message.Call  -> msg.copy(status = MessageStatus.SENT)
+            is com.example.messenger.domain.model.Message.Clip  -> msg.copy(status = MessageStatus.SENT)
         }
         val result = firestoreService.sendMessage(message)
         if (result.isSuccess) {

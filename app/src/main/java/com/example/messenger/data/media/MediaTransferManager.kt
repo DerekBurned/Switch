@@ -7,6 +7,7 @@ import com.google.firebase.storage.FileDownloadTask
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageTask
 import com.google.firebase.storage.UploadTask
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,6 +56,10 @@ class MediaTransferManager @Inject constructor(
             update(itemId, MediaTransfer.Cancelled)
             Log.w(TAG, "upload cancelled: item=$itemId")
             Result.failure(e)
+        } catch (e: CancellationException) {
+            activeTasks.remove(itemId)
+            update(itemId, MediaTransfer.Cancelled)
+            throw e
         } catch (e: Exception) {
             activeTasks.remove(itemId)
             update(itemId, MediaTransfer.Failed)
@@ -88,6 +93,11 @@ class MediaTransferManager @Inject constructor(
             update(itemId, MediaTransfer.Cancelled)
             Log.w(TAG, "download cancelled: item=$itemId")
             Result.failure(e)
+        } catch (e: CancellationException) {
+            activeTasks.remove(itemId)
+            dest.delete()
+            update(itemId, MediaTransfer.Cancelled)
+            throw e
         } catch (e: Exception) {
             activeTasks.remove(itemId)
             dest.delete()
@@ -95,6 +105,16 @@ class MediaTransferManager @Inject constructor(
             Log.e(TAG, "download failed: item=$itemId", e)
             Result.failure(e)
         }
+    }
+
+    suspend fun deleteRemote(url: String): Result<Unit> = try {
+        storage.getReferenceFromUrl(url).delete().await()
+        Result.success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w(TAG, "remote delete failed", e)
+        Result.failure(e)
     }
 
     fun cancel(itemId: String) {

@@ -4,8 +4,8 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
-import com.example.messenger.domain.model.CallSignal
-import com.example.messenger.domain.model.CallStatus
+import com.example.messenger.domain.model.call.CallSignal
+import com.example.messenger.domain.model.call.CallStatus
 import org.junit.jupiter.api.Test
 
 class CallSignalDtoTest {

@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.app.RemoteInput
+import com.example.messenger.domain.featureflag.FeatureFlag
+import com.example.messenger.domain.featureflag.FeatureFlags
 import com.example.messenger.domain.usecase.conversation.MarkConversationAsReadUseCase
 import com.example.messenger.domain.usecase.message.SendMessageUseCase
 import dagger.hilt.EntryPoint
@@ -21,6 +23,7 @@ import kotlinx.coroutines.launch
 interface NotificationActionEntryPoint {
     fun sendMessageUseCase(): SendMessageUseCase
     fun markConversationAsReadUseCase(): MarkConversationAsReadUseCase
+    fun featureFlags(): FeatureFlags
 }
 
 class NotificationReplyReceiver : BroadcastReceiver() {
@@ -30,23 +33,32 @@ class NotificationReplyReceiver : BroadcastReceiver() {
         if (conversationId.isBlank()) return
 
         val appContext = context.applicationContext
-        if (intent.action == ACTION_OPEN_BUBBLE) {
-            ChatNotifier.openAsBubble(
-                appContext,
-                conversationId,
-                intent.getStringExtra(EXTRA_PARTNER_ID).orEmpty(),
-                intent.getStringExtra(EXTRA_PARTNER_NAME).orEmpty(),
-            )
-            return
-        }
         val entry = EntryPointAccessors.fromApplication(appContext, NotificationActionEntryPoint::class.java)
         val pending = goAsync()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         scope.launch {
             try {
+                val featureFlags = entry.featureFlags()
+                featureFlags.awaitFresh()
                 when (intent.action) {
-                    ACTION_REPLY -> handleReply(appContext, intent, conversationId, entry)
-                    ACTION_MARK_READ -> handleMarkRead(appContext, conversationId, entry)
+                    ACTION_OPEN_BUBBLE -> ChatNotifier.openAsBubble(
+                        appContext,
+                        conversationId,
+                        intent.getStringExtra(EXTRA_PARTNER_ID).orEmpty(),
+                        intent.getStringExtra(EXTRA_PARTNER_NAME).orEmpty(),
+                    )
+                    ACTION_REPLY ->
+                        if (featureFlags.isEnabled(FeatureFlag.NOTIFICATION_INLINE_REPLY)) {
+                            handleReply(appContext, intent, conversationId, entry)
+                        } else {
+                            ChatNotifier.refresh(appContext, conversationId)
+                        }
+                    ACTION_MARK_READ ->
+                        if (featureFlags.isEnabled(FeatureFlag.NOTIFICATION_MARK_READ)) {
+                            handleMarkRead(appContext, conversationId, entry)
+                        } else {
+                            ChatNotifier.refresh(appContext, conversationId)
+                        }
                 }
             } catch (t: Throwable) {
                 Log.w(TAG, "notification action failed", t)

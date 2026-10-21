@@ -10,5 +10,7 @@ data class User(
     val lastSeen: Long = 0L,
     val isOnline: Boolean = false,
     val phoneVisibility: PhoneVisibility = PhoneVisibility.HIDDEN,
-    val fcmToken: String? = null
+    val fcmToken: String? = null,
+    val deleted: Boolean = false,
+    val deletedAt: Long = 0L,
 )

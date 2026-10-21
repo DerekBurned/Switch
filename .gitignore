@@ -167,3 +167,6 @@ fabric.properties
 app/objectbox-models/*.bak
 /.figma_tmp/
 /app/release/
+.kotlin/
+/app/objectbox-jni-*
+/app/libobjectbox-jni-*

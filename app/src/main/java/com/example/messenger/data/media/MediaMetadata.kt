@@ -5,12 +5,12 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import androidx.core.graphics.scale
 import com.example.messenger.domain.model.MediaItem
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.max
-import androidx.core.graphics.scale
 
 @Singleton
 class MediaMetadata @Inject constructor(

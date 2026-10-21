@@ -1,6 +1,7 @@
 package com.example.messenger.domain.model
 
 import androidx.compose.runtime.Immutable
+import com.example.messenger.domain.model.call.CallType
 
 @Immutable
 data class CallHistoryEntry(

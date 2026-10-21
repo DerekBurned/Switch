@@ -21,10 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.unit.dp
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
+import androidx.compose.ui.unit.dp
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.messengerTokens
 
 @Composable
 fun ChatMessageSkeleton(modifier: Modifier = Modifier) {

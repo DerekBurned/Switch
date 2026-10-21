@@ -25,13 +25,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.messenger.presentation.components.common.MotionSprings
+import com.example.messenger.presentation.components.common.model.MotionSprings
 import com.example.messenger.presentation.components.common.pressScale
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.messengerTokens
 
 @Composable
 fun ScrollToBottomButton(

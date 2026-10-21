@@ -1,8 +1,5 @@
 package com.example.messenger.presentation.components.chat
 
-import com.example.messenger.presentation.components.common.MessengerAvatar
-import com.example.messenger.presentation.components.common.PresenceIndicator
-import com.example.messenger.presentation.components.common.sharedElementKey
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,11 +28,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import com.example.messenger.domain.model.PresenceState
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
+import androidx.compose.ui.unit.dp
+import com.example.messenger.domain.featureflag.FeatureFlag
+import com.example.messenger.domain.model.presence.PresenceState
+import com.example.messenger.presentation.components.common.MessengerAvatar
+import com.example.messenger.presentation.components.common.PresenceIndicator
+import com.example.messenger.presentation.components.common.sharedElementKey
+import com.example.messenger.presentation.featureflag.featureEnabled
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.messengerTokens
 
 @Composable
 fun ChatTopBar(
@@ -50,6 +52,7 @@ fun ChatTopBar(
     onCallClick: () -> Unit = {},
     onVideoCallClick: () -> Unit = {},
     partnerAvatarUrl: String? = null,
+    partnerDeleted: Boolean = false,
 ) {
     val tokens = messengerTokens
     val barShape = RoundedCornerShape(26.dp)
@@ -82,16 +85,19 @@ fun ChatTopBar(
             MessengerAvatar(
                 name = partnerName,
                 photoUrl = partnerAvatarUrl,
+                deleted = partnerDeleted,
                 size = 40.dp,
                 modifier = Modifier
                     .sharedElementKey("avatar-$sharedKeyPartnerId")
                     .clip(CircleShape)
                     .clickable(onClick = onProfileClick),
             )
-            PresenceIndicator(
-                state = presenceState,
-                size = 12.dp,
-            )
+            if (!partnerDeleted) {
+                PresenceIndicator(
+                    state = presenceState,
+                    size = 12.dp,
+                )
+            }
         }
         Column(
             modifier = Modifier
@@ -122,31 +128,35 @@ fun ChatTopBar(
                 }
             }
         }
-        Box(
-            modifier = Modifier
-                .size(46.dp)
-                .clip(CircleShape)
-                .clickable(onClick = onCallClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Call,
-                contentDescription = "Voice call",
-                tint = tokens.textPrimary,
-            )
+        if (featureEnabled(FeatureFlag.CALLS)) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .clickable(enabled = !partnerDeleted, onClick = onCallClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Call,
+                    contentDescription = "Voice call",
+                    tint = if (partnerDeleted) tokens.textMuted else tokens.textPrimary,
+                )
+            }
         }
-        Box(
-            modifier = Modifier
-                .size(46.dp)
-                .clip(CircleShape)
-                .clickable(onClick = onVideoCallClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Videocam,
-                contentDescription = "Video call",
-                tint = tokens.textPrimary,
-            )
+        if (featureEnabled(FeatureFlag.CALLS_VIDEO)) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .clickable(enabled = !partnerDeleted, onClick = onVideoCallClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Videocam,
+                    contentDescription = "Video call",
+                    tint = if (partnerDeleted) tokens.textMuted else tokens.textPrimary,
+                )
+            }
         }
     }
 }

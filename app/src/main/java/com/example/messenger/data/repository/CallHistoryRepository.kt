@@ -1,4 +1,4 @@
-﻿package com.example.messenger.data.repository
+package com.example.messenger.data.repository
 
 import com.example.messenger.data.local.obx.ObxConversation
 import com.example.messenger.data.local.obx.ObxConversation_
@@ -7,8 +7,8 @@ import com.example.messenger.data.local.obx.ObxMessage_
 import com.example.messenger.data.local.obx.asFlow
 import com.example.messenger.data.local.obx.queryFlow
 import com.example.messenger.domain.model.CallHistoryEntry
-import com.example.messenger.domain.model.CallType
 import com.example.messenger.domain.model.Message
+import com.example.messenger.domain.model.call.CallType
 import io.objectbox.Box
 import io.objectbox.query.QueryBuilder
 import kotlinx.coroutines.flow.Flow

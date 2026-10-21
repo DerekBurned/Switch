@@ -1,6 +1,6 @@
 package com.example.messenger.domain.usecase.presence
 
-import com.example.messenger.domain.model.UserPresence
+import com.example.messenger.domain.model.presence.UserPresence
 import com.example.messenger.domain.service.IPresenceService
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject

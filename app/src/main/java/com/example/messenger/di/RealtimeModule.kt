@@ -1,8 +1,10 @@
 package com.example.messenger.di
 
+import com.example.messenger.data.presence.FirebasePresenceService
 import com.example.messenger.data.service.AndroidSessionCleaner
-import com.example.messenger.data.service.FirebasePresenceService
 import com.example.messenger.data.service.FirebaseTypingService
+import com.example.messenger.data.service.InMemoryAuthFlowGate
+import com.example.messenger.domain.service.IAuthFlowGate
 import com.example.messenger.domain.service.IPresenceService
 import com.example.messenger.domain.service.ISessionCleaner
 import com.example.messenger.domain.service.ITypingService
@@ -27,5 +29,9 @@ abstract class RealtimeModule {
     @Binds
     @Singleton
     abstract fun bindSessionCleaner(impl: AndroidSessionCleaner): ISessionCleaner
+
+    @Binds
+    @Singleton
+    abstract fun bindAuthFlowGate(impl: InMemoryAuthFlowGate): IAuthFlowGate
 
 }

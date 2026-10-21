@@ -16,6 +16,11 @@ setGlobalOptions({region: "europe-west1"});
 const db = admin.firestore();
 const messaging = admin.messaging();
 
+const CLIP_PREVIEWS: {[type: string]: string} = {
+  VOICE_CLIP: "Voice message",
+  VIDEO_CLIP: "Video message",
+};
+
 interface ConversationDoc {
   participantIds?: string[];
   participantNames?: string[];
@@ -87,7 +92,8 @@ export const onMessageCreated = onDocumentCreated(
     }
 
     const encrypted = message.enc === 1;
-    const preview = encrypted ? "" : (message.text ?? "").slice(0, 200);
+    const preview = CLIP_PREVIEWS[message.type ?? ""] ??
+      (encrypted ? "" : (message.text ?? "").slice(0, 200));
     const timestamp = (message.timestamp ?? Date.now()).toString();
 
     const data: {[key: string]: string} = {
@@ -135,6 +141,7 @@ interface CallSignalDoc {
   calleeId?: string;
   channelName?: string;
   status?: string;
+  video?: boolean;
 }
 
 export const onCallSignalCreated = onValueCreated(
@@ -168,6 +175,7 @@ export const onCallSignalCreated = onValueCreated(
         callerId,
         callerName,
         channelName,
+        video: String(signal.video === true),
       },
       android: {priority: "high"},
     });
@@ -231,3 +239,71 @@ export const getRtcToken = onCall(
     return {token, uid, expiresInSeconds: RTC_TOKEN_TTL_SECONDS};
   },
 );
+
+const AVATAR_PREFIX = "avatars/";
+
+async function bestEffort(label: string, uid: string, task: Promise<unknown>) {
+  try {
+    await task;
+  } catch (error) {
+    logger.warn("deleteAccount cleanup step failed", {label, uid, error});
+  }
+}
+
+export const deleteAccount = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "Sign-in required.");
+  }
+
+  const userRef = db.collection("users").doc(uid);
+  try {
+    await userRef.set(
+      {
+        deleted: true,
+        deletedAt: Date.now(),
+        username: null,
+        usernameLower: null,
+        avatarUrl: null,
+        phoneNumber: null,
+        isOnline: false,
+        fcmToken: admin.firestore.FieldValue.delete(),
+      },
+      {merge: true},
+    );
+  } catch (error) {
+    logger.error("deleteAccount could not tombstone the profile", {uid, error});
+    throw new HttpsError("internal", "Could not delete the account. Try again.");
+  }
+
+  const rtdb = admin.database();
+  await Promise.all([
+    bestEffort("keys", uid, db.recursiveDelete(userRef.collection("keys"))),
+    bestEffort(
+      "contactAliases",
+      uid,
+      db.recursiveDelete(userRef.collection("contactAliases")),
+    ),
+    bestEffort(
+      "avatars",
+      uid,
+      admin.storage().bucket().deleteFiles({prefix: `${AVATAR_PREFIX}${uid}/`}),
+    ),
+    bestEffort("presence", uid, rtdb.ref(`presence/${uid}`).remove()),
+    bestEffort("calls", uid, rtdb.ref(`calls/${uid}`).remove()),
+    bestEffort("callAcks", uid, rtdb.ref(`callAcks/${uid}`).remove()),
+  ]);
+
+  try {
+    await admin.auth().deleteUser(uid);
+  } catch (error) {
+    const code = (error as {code?: string}).code;
+    if (code !== "auth/user-not-found") {
+      logger.error("deleteAccount could not delete the auth user", {uid, error});
+      throw new HttpsError("internal", "Could not delete the account. Try again.");
+    }
+  }
+
+  logger.info("deleteAccount completed", {uid});
+  return {deleted: true};
+});

@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.messenger.domain.usecase.sync.SyncAllDataUseCase
+import com.google.firebase.auth.FirebaseAuth
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
@@ -12,16 +13,18 @@ import dagger.assisted.AssistedInject
 class SyncWorker @AssistedInject constructor(
     @Assisted private val context: Context,
     @Assisted private val parameters: WorkerParameters,
-    private val syncAllDataUseCase: SyncAllDataUseCase
+    private val syncAllDataUseCase: SyncAllDataUseCase,
+    private val auth: FirebaseAuth,
 ) : CoroutineWorker(context, parameters) {
 
     override suspend fun doWork(): Result {
+        if (auth.currentUser == null) return Result.success()
+
         val result = syncAllDataUseCase()
 
         return if (result.isSuccess) {
             Result.success()
         } else {
-            
             Result.retry()
         }
     }

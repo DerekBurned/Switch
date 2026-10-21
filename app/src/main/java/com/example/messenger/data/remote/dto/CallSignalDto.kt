@@ -1,7 +1,7 @@
 package com.example.messenger.data.remote.dto
 
-import com.example.messenger.domain.model.CallSignal
-import com.example.messenger.domain.model.CallStatus
+import com.example.messenger.domain.model.call.CallSignal
+import com.example.messenger.domain.model.call.CallStatus
 
 data class CallSignalDto(
     val callId: String = "",

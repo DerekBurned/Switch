@@ -1,12 +1,4 @@
 package com.example.messenger.presentation.components.common
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Surface
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
-
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
@@ -14,13 +6,18 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,16 +25,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.messenger.presentation.screens.ui.theme.Dimens
-import com.example.messenger.presentation.screens.ui.theme.MessengerShapes
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
-
-enum class PillButtonStyle {
-    Primary,
-    Neutral,
-    Danger,
-}
+import com.example.messenger.presentation.components.common.model.PillButtonStyle
+import com.example.messenger.presentation.theme.Dimens
+import com.example.messenger.presentation.theme.MessengerShapes
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.messengerTokens
 
 @Composable
 fun PillButton(
@@ -62,7 +56,7 @@ fun PillButton(
     val clickable = enabled && !loading
     val interaction = remember { MutableInteractionSource() }
     val containerColor by animateColorAsState(
-        targetValue = container.copy(alpha = if (enabled) 1f else 0.5f),
+        targetValue = if (enabled) container else container.copy(alpha = container.alpha * 0.5f),
         animationSpec = spring(stiffness = 700f),
         label = "pillButtonColor",
     )

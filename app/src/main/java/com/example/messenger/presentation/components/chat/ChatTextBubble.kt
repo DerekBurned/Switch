@@ -3,18 +3,12 @@ package com.example.messenger.presentation.components.chat
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -23,19 +17,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Brush
 import com.example.messenger.presentation.components.common.MessageStatusIcon
-import com.example.messenger.presentation.screens.ui.theme.BubbleSent
-import com.example.messenger.presentation.screens.ui.theme.BubbleSentTop
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
+import com.example.messenger.presentation.theme.BubbleSent
+import com.example.messenger.presentation.theme.BubbleSentTop
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.messengerTokens
 import com.example.messenger.util.DateUtils
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
 
 @Composable
 fun ChatTextBubble(
@@ -84,44 +76,13 @@ fun ChatTextBubble(
             ) {
                 Column {
                     if (message.replyToMessageId != null) {
-                        val accent = tokens.accent
-                        Row(
-                            modifier = Modifier
-                                .padding(bottom = 6.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    if (tokens.isDark) Color.White.copy(alpha = 0.12f)
-                                    else Color.Black.copy(alpha = 0.05f),
-                                )
-                                .clickable(onClick = onReplyClick)
-                                .height(IntrinsicSize.Min)
-                                .padding(end = 8.dp),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(3.dp)
-                                    .fillMaxHeight()
-                                    .background(accent),
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Column(modifier = Modifier.padding(vertical = 3.dp)) {
-                                Text(
-                                    text = message.replyToSenderLabel ?: "Reply",
-                                    color = accent,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Text(
-                                    text = message.replyToText.orEmpty(),
-                                    color = onBubble.copy(alpha = 0.8f),
-                                    fontSize = 12.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        }
+                        ReplyQuote(
+                            senderLabel = message.replyToSenderLabel,
+                            text = message.replyToText,
+                            contentColor = onBubble,
+                            onClick = onReplyClick,
+                            modifier = Modifier.padding(bottom = 6.dp),
+                        )
                     }
                     Text(
                         text = message.text,

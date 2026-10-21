@@ -44,4 +44,20 @@ class IncomingMessagePayloadTest {
         val dto = parseIncomingDto(base - "timestamp")!!
         assertThat(dto.timestamp).isGreaterThan(0L)
     }
+
+    @Test
+    fun `voice clip pushes get the voice label`() {
+        assertThat(clipLabelFor("VOICE_CLIP", voice = "Voice", video = "Video")).isEqualTo("Voice")
+    }
+
+    @Test
+    fun `video clip pushes get the video label`() {
+        assertThat(clipLabelFor("VIDEO_CLIP", voice = "Voice", video = "Video")).isEqualTo("Video")
+    }
+
+    @Test
+    fun `text and media pushes get no clip label`() {
+        assertThat(clipLabelFor("TEXT", voice = "Voice", video = "Video")).isNull()
+        assertThat(clipLabelFor("MEDIA", voice = "Voice", video = "Video")).isNull()
+    }
 }

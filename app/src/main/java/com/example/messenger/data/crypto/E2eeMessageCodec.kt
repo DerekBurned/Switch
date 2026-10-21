@@ -1,10 +1,14 @@
 package com.example.messenger.data.crypto
 
+import com.example.messenger.data.crypto.model.ClipSecret
+import com.example.messenger.data.crypto.model.MediaSecret
+import com.example.messenger.data.crypto.model.MessagePayload
 import com.example.messenger.data.remote.auth.FirebaseAuthService
-import com.example.messenger.data.remote.dto.RemoteMessageDto
-import com.example.messenger.data.remote.dto.toDomain
-import com.example.messenger.data.remote.dto.toRemoteDto
+import com.example.messenger.data.remote.dto.message.RemoteMessageDto
+import com.example.messenger.data.remote.dto.message.toDomain
+import com.example.messenger.data.remote.dto.message.toRemoteDto
 import com.example.messenger.domain.model.Message
+import com.example.messenger.domain.model.voicemessage.Clip
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -34,8 +38,11 @@ class E2eeMessageCodec @Inject constructor(
     suspend fun encode(message: Message): RemoteMessageDto {
         val plain = message.toRemoteDto()
         if (message is Message.Call) return plain
-        val hasEncryptedMedia = message is Message.Media &&
-            message.items.any { !it.fileKey.isNullOrBlank() }
+        val hasEncryptedMedia = when (message) {
+            is Message.Media -> message.items.any { !it.fileKey.isNullOrBlank() }
+            is Message.Clip -> !message.clip.fileKey.isNullOrBlank()
+            else -> false
+        }
         val myUid = authService.getCurrentUserId() ?: return plainOrFail(hasEncryptedMedia, plain)
         val partnerId = participantResolver.partnerOf(message.conversationId, myUid)
             ?: return plainOrFail(hasEncryptedMedia, plain)
@@ -52,6 +59,10 @@ class E2eeMessageCodec @Inject constructor(
                     }
                 },
             )
+            is Message.Clip -> MessagePayload(
+                replyToText = message.replyToText,
+                clip = message.clip.toSecret(),
+            )
             is Message.Call -> return plain
         }
         val key = ConversationCrypto.deriveConversationKey(
@@ -63,6 +74,7 @@ class E2eeMessageCodec @Inject constructor(
             text = "",
             replyToText = null,
             mediaItems = plain.mediaItems.map { it.copy(blurHash = "") },
+            clip = plain.clip?.copy(waveform = emptyList()),
             enc = 1,
             ciphertext = b64(blob.ciphertext),
             nonce = b64(blob.nonce),
@@ -86,15 +98,32 @@ class E2eeMessageCodec @Inject constructor(
             ?: return undecryptable(dto, hasPendingWrites)
         val message = dto.copy(text = payload.text, replyToText = payload.replyToText)
             .toDomain(hasPendingWrites)
-        if (message !is Message.Media || payload.media.isEmpty()) return message
-        val secrets = payload.media.associateBy { it.itemId }
-        return message.copy(
-            items = message.items.map { item ->
-                secrets[item.id]?.let { secret ->
-                    item.copy(fileKey = secret.key, blurHash = secret.blurHash)
-                } ?: item
-            },
-        )
+        val clipSecret = payload.clip
+        return when {
+            message is Message.Media && payload.media.isNotEmpty() -> {
+                val secrets = payload.media.associateBy { it.itemId }
+                message.copy(
+                    items = message.items.map { item ->
+                        secrets[item.id]?.let { secret ->
+                            item.copy(fileKey = secret.key, blurHash = secret.blurHash)
+                        } ?: item
+                    },
+                )
+            }
+            message is Message.Clip && clipSecret != null ->
+                message.copy(clip = message.clip.withSecret(clipSecret))
+            else -> message
+        }
+    }
+
+    private fun Clip.toSecret(): ClipSecret = when (this) {
+        is Clip.Voice -> ClipSecret(key = fileKey?.takeIf { it.isNotBlank() }, waveform = waveform)
+        is Clip.Video -> ClipSecret(key = fileKey?.takeIf { it.isNotBlank() })
+    }
+
+    private fun Clip.withSecret(secret: ClipSecret): Clip = when (this) {
+        is Clip.Voice -> copy(fileKey = secret.key, waveform = secret.waveform)
+        is Clip.Video -> copy(fileKey = secret.key)
     }
 
     private suspend fun decryptPayload(dto: RemoteMessageDto): MessagePayload {
@@ -142,13 +171,14 @@ class E2eeMessageCodec @Inject constructor(
             text = UNDECRYPTABLE_TEXT,
             type = Message.TYPE_TEXT,
             mediaItems = emptyList(),
+            clip = null,
             replyToMessageId = null,
             replyToText = null,
             replyToSenderId = null,
         ).toDomain(hasPendingWrites)
 
     companion object {
-        const val UNDECRYPTABLE_TEXT = "Encrypted message"
+        const val UNDECRYPTABLE_TEXT = "Message cannot be decrypted on this device"
         private const val KEY_REFRESH_THROTTLE_MS = 5 * 60 * 1000L
     }
 }

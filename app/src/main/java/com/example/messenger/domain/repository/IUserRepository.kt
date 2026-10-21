@@ -1,6 +1,7 @@
 package com.example.messenger.domain.repository
 
 import android.net.Uri
+import com.example.messenger.domain.model.RemoteUserSnapshot
 import com.example.messenger.domain.model.User
 import kotlinx.coroutines.flow.Flow
 
@@ -10,6 +11,8 @@ interface IUserRepository {
     suspend fun uploadAvatar(imageUri: Uri): Result<String>
     suspend fun getProfilePhotos(userId: String): Result<List<String>>
     fun observeUser(userId: String): Flow<User?>
+    fun observeRemoteUser(userId: String): Flow<RemoteUserSnapshot>
+    fun observeCachedUsers(): Flow<Map<String, User>>
     suspend fun updateUserStatus(isOnline: Boolean): Result<Unit>
     suspend fun updateLastSeen(): Result<Unit>
     suspend fun updateUserProfile(updates: Map<String, Any>): Result<Unit>

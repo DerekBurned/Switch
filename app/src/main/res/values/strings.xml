@@ -6,6 +6,21 @@
     <!-- Auth -->
     <string name="auth_error_verification_failed">Verification failed</string>
     <string name="auth_error_invalid_code">Invalid code</string>
+    <string name="auth_error_code_expired">This code has expired — request a new one</string>
+    <string name="auth_error_invalid_number">That doesn\'t look like a valid phone number</string>
+    <string name="auth_error_too_many_requests">Too many attempts — try again later</string>
+    <string name="auth_error_verification_cancelled">Verification was cancelled — tap send again to retry</string>
+    <string name="auth_error_verification_in_progress">A verification check is already open</string>
+    <string name="auth_error_verification_unavailable">Could not reach the verification service — check your connection and retry</string>
+    <string name="auth_error_app_not_verified">This build is not verified with Firebase. Register its signing certificate in the Firebase console.</string>
+    <string name="auth_error_account_not_found">This account no longer exists. Register to continue.</string>
+    <string name="auth_error_account_deleted">This account has been deleted. Register to continue.</string>
+
+    <!-- Delete account -->
+    <string name="delete_account_error_confirm">Type DELETE to confirm</string>
+    <string name="delete_account_error_no_number">No phone number on file to verify against</string>
+    <string name="delete_account_error_reauth">Could not verify it is you — try again</string>
+    <string name="delete_account_error_failed">Could not delete the account. Try again.</string>
 
     <!-- Change phone -->
     <string name="change_phone_error_no_number_on_file">No phone number on file</string>
@@ -99,4 +114,45 @@
     <string name="call_action_decline">Decline</string>
     <string name="call_ongoing_subtitle">Ongoing call — tap to return</string>
     <string name="call_ongoing_video_subtitle">Ongoing video call — tap to return</string>
+    <string name="calls_unavailable">Calls are temporarily unavailable</string>
+    <string name="voice_record_unavailable">Cannot record right now</string>
+    <string name="voice_permission_denied">Microphone access is needed to record</string>
+    <string name="clip_voice_message">Voice message</string>
+    <string name="clip_video_message">Video message</string>
+    <string name="clip_stop_playback">Stop playback</string>
+    <string name="clip_speed">%1$sx</string>
+    <string name="voice_play">Play voice message</string>
+    <string name="voice_pause">Pause voice message</string>
+    <string name="voice_send">Send voice message</string>
+    <string name="voice_hold_to_record">Hold to record voice message</string>
+    <string name="voice_discard_recording">Discard recording</string>
+    <string name="voice_stop_recording">Stop recording</string>
+    <string name="voice_slide_to_cancel">Slide to cancel</string>
+    <string name="voice_draft">Draft</string>
+    <string name="voice_discard_draft">Discard voice draft</string>
+    <string name="voice_send_draft">Send voice draft</string>
+    <string name="voice_permission_title">Microphone access</string>
+    <string name="voice_permission_rationale">Voice messages need your microphone. Allow access to record them.</string>
+    <string name="voice_permission_settings">Microphone access is turned off for this app. Turn it on in Settings to record voice messages.</string>
+    <string name="voice_permission_allow">Allow</string>
+    <string name="voice_permission_open_settings">Open settings</string>
+    <string name="voice_permission_not_now">Not now</string>
+    <string name="chat_reply_you">You</string>
+    <string name="chat_reply_unknown_sender">User</string>
+    <string name="voice_cancel_send">Cancel sending voice message</string>
+    <string name="voice_retry_send">Retry sending voice message</string>
+    <string name="voice_play_failed">Voice message failed to play. Tap to retry</string>
+    <string name="voice_slide_up_to_lock">Slide up to lock</string>
+    <string name="voice_mode_hint">Hold to record a voice message. Tap to switch to video</string>
+    <string name="video_mode_hint">Hold to record a video message. Tap to switch to voice</string>
+    <string name="video_hold_to_record">Hold to record video message</string>
+    <string name="video_note_play">Play video message</string>
+    <string name="video_note_pause">Pause video message</string>
+    <string name="video_note_send">Send video message</string>
+    <string name="video_send_draft">Send video draft</string>
+    <string name="video_discard_draft">Discard video draft</string>
+    <string name="camera_permission_title">Camera access</string>
+    <string name="camera_permission_denied">Camera and microphone access are needed to record video</string>
+    <string name="camera_permission_rationale">Video messages need your camera and microphone. Allow access to record them.</string>
+    <string name="camera_permission_settings">Camera or microphone access is turned off for this app. Turn it on in Settings to record video messages.</string>
 </resources>

@@ -1,25 +1,26 @@
-﻿package com.example.messenger.data.repository
+package com.example.messenger.data.repository
 
+import android.net.Uri
 import com.example.messenger.data.local.obx.ObxContactAlias
 import com.example.messenger.data.local.obx.ObxContactAlias_
 import com.example.messenger.data.local.obx.ObxConversation
 import com.example.messenger.data.local.obx.ObxUser
 import com.example.messenger.data.local.obx.ObxUser_
-import com.example.messenger.data.local.obx.asFlow
+import com.example.messenger.data.local.obx.mappers.toDomain
+import com.example.messenger.data.local.obx.mappers.toObx
 import com.example.messenger.data.local.obx.queryFlow
-import com.example.messenger.data.local.obx.toDomain
-import com.example.messenger.data.local.obx.toObx
-import android.net.Uri
 import com.example.messenger.data.remote.auth.FirebaseAuthService
-import com.example.messenger.data.remote.firebase.FirestoreService
 import com.example.messenger.data.remote.firebase.FirebaseStorageService
+import com.example.messenger.data.remote.firebase.FirestoreService
 import com.example.messenger.domain.model.PhoneNumber
+import com.example.messenger.domain.model.RemoteUserSnapshot
 import com.example.messenger.domain.model.User
 import com.example.messenger.domain.repository.IUserRepository
 import com.example.messenger.util.similarityScore
 import io.objectbox.Box
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
@@ -49,13 +50,16 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun getUserById(userId: String): Result<User?> {
         return try {
             val local = findByUid(userId)?.toDomain()
-            val remote = firestoreService.getUserProfile(userId).getOrNull()
+            val snapshot = firestoreService.fetchRemoteUser(userId).getOrNull()
+                ?: return Result.success(local)
+            val remote = snapshot.user
             if (remote != null) {
                 upsert(remote.toObx())
-                Result.success(remote)
-            } else {
-                Result.success(local)
+                return Result.success(remote)
             }
+            val tombstoned = local?.copy(deleted = true)
+            tombstoned?.let { upsert(it.toObx()) }
+            Result.success(tombstoned)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -67,7 +71,7 @@ class UserRepositoryImpl @Inject constructor(
             val q = query.trim()
 
             val remote = firestoreService.searchUsers(q).getOrElse { emptyList() }
-                .filter { it.id != currentUserId }
+                .filter { it.id != currentUserId && !it.deleted }
             if (remote.isNotEmpty()) {
                 userBox.put(remote.map { it.toObx() })
             }
@@ -76,7 +80,8 @@ class UserRepositoryImpl @Inject constructor(
 
             val local = userBox.all
                 .filter {
-                    it.uid != currentUserId &&
+                    !it.deleted &&
+                        it.uid != currentUserId &&
                         (it.username.contains(q, ignoreCase = true) ||
                             aliases[it.uid]?.contains(q, ignoreCase = true) == true)
                 }
@@ -102,6 +107,14 @@ class UserRepositoryImpl @Inject constructor(
         return queryFlow { userBox.query(ObxUser_.uid.equal(userId)).build() }
             .map { rows -> rows.firstOrNull()?.toDomain() }
     }
+
+    override fun observeCachedUsers(): Flow<Map<String, User>> =
+        queryFlow { userBox.query().build() }
+            .map { rows -> rows.associate { it.uid to it.toDomain() } }
+
+    override fun observeRemoteUser(userId: String): Flow<RemoteUserSnapshot> =
+        firestoreService.observeUserProfile(userId)
+            .onEach { snapshot -> snapshot.user?.let { upsert(it.toObx()) } }
 
     override suspend fun updateUserStatus(isOnline: Boolean): Result<Unit> {
         return try {

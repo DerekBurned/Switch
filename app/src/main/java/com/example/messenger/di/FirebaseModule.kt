@@ -2,10 +2,12 @@ package com.example.messenger.di
 
 import com.example.messenger.data.remote.auth.FirebaseAuthService
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.storage.FirebaseStorage
 import dagger.Module
 import dagger.Provides
@@ -50,5 +52,17 @@ object FirebaseModule {
     @Singleton
     fun provideFirebaseFunctions(): FirebaseFunctions {
         return FirebaseFunctions.getInstance("europe-west1")
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseCrashlytics(): FirebaseCrashlytics {
+        return FirebaseCrashlytics.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseRemoteConfig(): FirebaseRemoteConfig {
+        return FirebaseRemoteConfig.getInstance()
     }
 }

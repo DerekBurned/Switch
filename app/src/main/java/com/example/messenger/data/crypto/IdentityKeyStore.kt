@@ -1,10 +1,9 @@
 package com.example.messenger.data.crypto
 
+import com.example.messenger.data.crypto.model.IdentityKey
 import java.io.File
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
-
-class IdentityKey(val privateKey: ByteArray, val publicKey: ByteArray, val epoch: Int)
 
 class IdentityKeyStore(
     private val baseDir: File,

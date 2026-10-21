@@ -35,11 +35,42 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
-          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
-            echo "::error::GOOGLE_SERVICES_JSON secret is not set. Add it under Settings > Secrets and variables > Actions (base64 of app/google-services.json)."
-            exit 1
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
+            exit 0
           fi
-          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
+          echo "::notice::GOOGLE_SERVICES_JSON is not available, as on pull requests from forks. Using a placeholder config; unit tests don't contact Firebase."
+          cat > app/google-services.json <<'EOF'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "switch-placeholder",
+              "storage_bucket": "switch-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+                  "android_client_info": {
+                    "package_name": "com.example.messenger"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "placeholder"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
 
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest
@@ -50,3 +81,15 @@ jobs:
         with:
           name: test-report
           path: app/build/reports/tests/testDebugUnitTest/
+
+      - name: Build coverage report
+        run: ./gradlew koverXmlReportDebug koverHtmlReportDebug
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: app/build/reports/kover/
+
+      - name: Check coverage gate
+        run: ./gradlew koverVerifyDebug

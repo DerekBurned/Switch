@@ -6,13 +6,14 @@ import com.example.messenger.data.local.obx.ObxConversation_
 import com.example.messenger.data.local.obx.ObxMessage
 import com.example.messenger.data.local.obx.ObxMessage_
 import com.example.messenger.data.local.obx.asFlow
-import com.example.messenger.data.local.obx.toDomain
-import com.example.messenger.data.local.obx.toObx
+import com.example.messenger.data.local.obx.mappers.toDomain
+import com.example.messenger.data.local.obx.mappers.toObx
 import com.example.messenger.data.remote.auth.FirebaseAuthService
 import com.example.messenger.data.remote.firebase.FirestoreService
 import com.example.messenger.domain.model.Conversation
 import com.example.messenger.domain.model.Profile
 import com.example.messenger.domain.repository.IConversationRepository
+import com.example.messenger.util.resolveDisplayName
 import io.objectbox.Box
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -98,7 +99,12 @@ class ConversationRepositoryImpl @Inject constructor(
             val avatars = mutableListOf<String?>()
             for (id in participantIds) {
                 val user = firestoreService.getUserProfile(id).getOrNull()
-                names.add(user?.username ?: "Unknown")
+                if (user?.deleted == true) {
+                    return Result.failure(
+                        IllegalStateException("Cannot start a conversation with a deleted account"),
+                    )
+                }
+                names.add(resolveDisplayName(user?.username, alias = null))
                 avatars.add(user?.avatarUrl)
             }
             val conversation = Conversation(

@@ -46,24 +46,17 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
-import androidx.media3.common.MediaItem as Media3Item
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import com.example.messenger.R
 import com.example.messenger.data.media.BlurHash
-import kotlin.math.abs
+import com.example.messenger.presentation.components.media.model.MediaSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-
-data class MediaSource(
-    val key: String,
-    val isVideo: Boolean,
-    val model: Any,
-    val playUri: Uri,
-    val blurHash: String? = null,
-)
+import kotlin.math.abs
+import androidx.media3.common.MediaItem as Media3Item
 
 @Composable
 fun FullscreenMediaPager(

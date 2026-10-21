@@ -8,7 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
-import com.example.messenger.presentation.screens.ui.theme.Motion
+import com.example.messenger.presentation.theme.Motion
 
 val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
 val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }

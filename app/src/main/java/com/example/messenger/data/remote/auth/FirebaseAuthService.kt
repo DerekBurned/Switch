@@ -3,7 +3,6 @@ package com.example.messenger.data.remote.auth
 import android.app.Activity
 import android.util.Log
 import androidx.core.net.toUri
-import com.example.messenger.data.local.repository.ILocalRepository
 import com.example.messenger.util.VerificationResult
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
@@ -28,11 +27,9 @@ import kotlin.coroutines.resume
 @Singleton
 class FirebaseAuthService @Inject constructor(
     private val auth: FirebaseAuth,
-    private val repository: ILocalRepository
-    ) {
+) {
 
-    private var verificationId: String? = null
-    private var resendToken: PhoneAuthProvider.ForceResendingToken? = null
+    private val resendTokens = mutableMapOf<String, PhoneAuthProvider.ForceResendingToken>()
 
     private companion object {
         const val TAG = "AUTHFLOW_SVC"
@@ -43,7 +40,7 @@ class FirebaseAuthService @Inject constructor(
         activity: Activity
     ): Result<VerificationResult> = suspendCancellableCoroutine { continuation ->
 
-        Log.d(TAG, "sendVerificationCode: requesting for '$phoneNumber'")
+        Log.d(TAG, "sendVerificationCode: requesting")
 
         val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
@@ -68,9 +65,8 @@ class FirebaseAuthService @Inject constructor(
                 verId: String,
                 token: PhoneAuthProvider.ForceResendingToken
             ) {
-                Log.d(TAG, "onCodeSent: verId=$verId")
-                verificationId = verId
-                resendToken = token
+                Log.d(TAG, "onCodeSent")
+                resendTokens[verId] = token
                 if (continuation.isActive) {
                     continuation.resume(
                         Result.success(VerificationResult.CodeSent(verId))
@@ -90,10 +86,10 @@ class FirebaseAuthService @Inject constructor(
         PhoneAuthProvider.verifyPhoneNumber(options)
     }
 
-    suspend fun verifyCode(code: String): Result<PhoneAuthCredential> {
-        Log.d(TAG, "verifyCode: code='$code' verId=$verificationId")
+    fun verifyCode(code: String, verificationId: String?): Result<PhoneAuthCredential> {
+        Log.d(TAG, "verifyCode: building credential, haveVerificationId=${verificationId != null}")
         return try {
-            val verId = verificationId
+            val verId = verificationId?.takeIf { it.isNotBlank() }
                 ?: return Result.failure(Exception("No verification ID found"))
 
             val credential = PhoneAuthProvider.getCredential(verId, code)
@@ -114,18 +110,6 @@ class FirebaseAuthService @Inject constructor(
             Result.success(user)
         } catch (e: Exception) {
             Log.e(TAG, "signInWithPhone: FAILED", e)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun verifyCodeAndSignIn(code: String): Result<FirebaseUser> {
-        return try {
-            val credentialResult = verifyCode(code)
-            if (credentialResult.isFailure) {
-                return Result.failure(credentialResult.exceptionOrNull()!!)
-            }
-            signInWithPhone(credentialResult.getOrNull()!!)
-        } catch (e: Exception) {
             Result.failure(e)
         }
     }
@@ -168,10 +152,8 @@ class FirebaseAuthService @Inject constructor(
     }
 
     suspend fun logout() {
-        repository.resetDB()
         auth.signOut()
-        verificationId = null
-        resendToken = null
+        resendTokens.clear()
     }
 
     fun isAuthenticated(): Boolean = auth.currentUser != null
@@ -227,10 +209,11 @@ class FirebaseAuthService @Inject constructor(
 
     suspend fun resendVerificationCode(
         phoneNumber: String,
-        activity: Activity
+        activity: Activity,
+        verificationId: String?,
     ): Result<VerificationResult> = suspendCancellableCoroutine { continuation ->
 
-        val token = resendToken
+        val token = verificationId?.let { resendTokens[it] }
             ?: return@suspendCancellableCoroutine continuation.resume(
                 Result.failure(Exception("No resend token available"))
             )
@@ -256,8 +239,7 @@ class FirebaseAuthService @Inject constructor(
                 verId: String,
                 newToken: PhoneAuthProvider.ForceResendingToken
             ) {
-                verificationId = verId
-                resendToken = newToken
+                resendTokens[verId] = newToken
 
                 if (continuation.isActive) {
                     continuation.resume(

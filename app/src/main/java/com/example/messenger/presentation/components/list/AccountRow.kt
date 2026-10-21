@@ -1,14 +1,9 @@
 package com.example.messenger.presentation.components.list
-import com.example.messenger.presentation.components.common.MessengerAvatar
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material3.Surface
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
-
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,15 +15,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.messenger.presentation.components.common.MessengerAvatar
 import com.example.messenger.presentation.components.common.pressScale
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
-import com.example.messenger.presentation.state.AccountSummary
+import com.example.messenger.presentation.screens.changeaccount.AccountSummary
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.messengerTokens
 
 @Composable
 fun AccountRow(account: AccountSummary, isCurrent: Boolean, onClick: () -> Unit) {
@@ -49,7 +48,7 @@ fun AccountRow(account: AccountSummary, isCurrent: Boolean, onClick: () -> Unit)
         MessengerAvatar(name = account.name, size = 46.dp)
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(account.name, color = tokens.textOnField, style = MaterialTheme.typography.titleSmall)
+            Text(account.name, color = tokens.textPrimary, style = MaterialTheme.typography.titleSmall)
             Text(account.phone, color = tokens.textMuted, style = MaterialTheme.typography.bodySmall)
         }
         if (isCurrent) {

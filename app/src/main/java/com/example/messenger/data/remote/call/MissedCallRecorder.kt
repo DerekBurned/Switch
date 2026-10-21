@@ -9,8 +9,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import com.example.messenger.R
-import com.example.messenger.domain.model.CallType
 import com.example.messenger.domain.model.Message
+import com.example.messenger.domain.model.call.CallType
 import com.example.messenger.domain.repository.IConversationRepository
 import com.example.messenger.domain.repository.IMessageRepository
 import com.example.messenger.presentation.MainActivity

@@ -21,12 +21,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.media3.common.MediaItem as Media3Item
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import com.example.messenger.domain.model.MediaItem
 import java.io.File
+import androidx.media3.common.MediaItem as Media3Item
 
 @Composable
 fun MediaViewerOverlay(item: MediaItem, onDismiss: () -> Unit) {

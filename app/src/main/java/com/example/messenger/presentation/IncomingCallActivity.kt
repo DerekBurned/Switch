@@ -2,8 +2,8 @@ package com.example.messenger.presentation
 
 import android.app.KeyguardManager
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -41,10 +41,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.messenger.R
 import com.example.messenger.data.remote.call.ActiveCallHolder
 import com.example.messenger.data.remote.call.CallForegroundService
-import com.example.messenger.presentation.screens.ui.theme.ChatBackground
-import com.example.messenger.presentation.screens.ui.theme.DangerRed
-import com.example.messenger.presentation.screens.ui.theme.OnlineGreen
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
+import com.example.messenger.presentation.theme.ChatBackground
+import com.example.messenger.presentation.theme.DangerRed
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.OnlineGreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -53,10 +53,9 @@ class IncomingCallActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-        }
+        setShowWhenLocked(true)
+        setTurnScreenOn(true)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         if (intent.getBooleanExtra(MainActivity.EXTRA_ACCEPT_CALL, false)) {
             accept()

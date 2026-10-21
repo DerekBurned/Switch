@@ -1,0 +1,371 @@
+{
+  "conditions": [],
+  "parameters": {},
+  "parameterGroups": {
+    "Calls": {
+      "description": "Voice and video calls. Turning off calls turns off every calls_* flag.",
+      "parameters": {
+        "calls": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides every call button, blocks outgoing calls and declines incoming calls. A call already in progress is not ended.",
+          "valueType": "BOOLEAN"
+        },
+        "calls_video": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the video-call buttons, the in-call camera toggle and the picture-in-picture camera action.",
+          "valueType": "BOOLEAN"
+        },
+        "calls_flip_camera": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the flip-camera button during a call.",
+          "valueType": "BOOLEAN"
+        },
+        "calls_speaker": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the speaker button during a call and in picture-in-picture.",
+          "valueType": "BOOLEAN"
+        },
+        "calls_pip": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: a call no longer goes into picture-in-picture when you leave the app.",
+          "valueType": "BOOLEAN"
+        },
+        "calls_floating_bubble": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: a minimized call stays in the top bar instead of the floating bubble or video tile.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Voice and video messages": {
+      "description": "Recording voice messages and video notes.",
+      "parameters": {
+        "voice_messages": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hold-to-record voice messages are unavailable. With video_notes also off, the mic button is hidden.",
+          "valueType": "BOOLEAN"
+        },
+        "video_notes": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: the composer can't switch to video-note mode.",
+          "valueType": "BOOLEAN"
+        },
+        "recording_lock": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: removes slide-up-to-lock while recording voice messages and video notes.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Clip playback": {
+      "description": "Playing voice messages and video notes. Turning off clip_playback turns off the other three.",
+      "parameters": {
+        "clip_playback": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: voice messages and video notes can't be played.",
+          "valueType": "BOOLEAN"
+        },
+        "clip_seek": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: no seeking on the voice-message waveform or the video-note ring.",
+          "valueType": "BOOLEAN"
+        },
+        "clip_mini_player": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the mini player that keeps a clip playing outside its chat. Turns off clip_playback_speed.",
+          "valueType": "BOOLEAN"
+        },
+        "clip_playback_speed": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the playback-speed button in the mini player.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Media": {
+      "description": "Photos and videos in chats.",
+      "parameters": {
+        "media_sending": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the attach button, so no photos or videos can be sent. Turns off media_camera and media_picker_filters.",
+          "valueType": "BOOLEAN"
+        },
+        "media_camera": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: removes the camera cell from the media picker and skips the camera permission request.",
+          "valueType": "BOOLEAN"
+        },
+        "media_picker_filters": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the All / Photos / Videos chips in the media picker.",
+          "valueType": "BOOLEAN"
+        },
+        "media_viewer": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: tapping a photo or video no longer opens the fullscreen viewer.",
+          "valueType": "BOOLEAN"
+        },
+        "media_download": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the download button on photos and videos.",
+          "valueType": "BOOLEAN"
+        },
+        "media_cancel_transfer": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides cancel on uploads and downloads in progress.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Messages": {
+      "description": "Message actions inside a chat.",
+      "parameters": {
+        "message_menu": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: long-press no longer opens the message menu. Turns off copy and both deletes.",
+          "valueType": "BOOLEAN"
+        },
+        "message_copy": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Copy in the message menu.",
+          "valueType": "BOOLEAN"
+        },
+        "message_delete_for_me": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Delete for me in the message menu.",
+          "valueType": "BOOLEAN"
+        },
+        "message_delete_for_everyone": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Delete for everyone in the message menu.",
+          "valueType": "BOOLEAN"
+        },
+        "message_reply": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Reply in the message menu. Turns off message_swipe_reply and message_reply_jump.",
+          "valueType": "BOOLEAN"
+        },
+        "message_swipe_reply": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: swiping a message no longer starts a reply.",
+          "valueType": "BOOLEAN"
+        },
+        "message_reply_jump": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: tapping a quoted message no longer jumps to the original.",
+          "valueType": "BOOLEAN"
+        },
+        "chat_swipe_navigation": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: no swipe back and no swipe to the partner's profile on the chat screen.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Chat list": {
+      "description": "The list of conversations.",
+      "parameters": {
+        "chat_list_swipe_actions": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: chat rows no longer swipe to reveal actions. Turns off the four row-action flags below.",
+          "valueType": "BOOLEAN"
+        },
+        "chat_list_mark_read": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Mark as read in the row swipe actions.",
+          "valueType": "BOOLEAN"
+        },
+        "chat_list_delete": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Delete in the row swipe actions.",
+          "valueType": "BOOLEAN"
+        },
+        "chat_list_delete_for_everyone": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Delete for everyone in the row swipe actions.",
+          "valueType": "BOOLEAN"
+        },
+        "chat_list_edit": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Edit in the row swipe actions.",
+          "valueType": "BOOLEAN"
+        },
+        "chat_list_pull_refresh": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: turns off pull to refresh on the chat list.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Search": {
+      "description": "Searching chats and people.",
+      "parameters": {
+        "search": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the search pill and the search overlay. Turns off search_recent.",
+          "valueType": "BOOLEAN"
+        },
+        "search_recent": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the recently searched and recently opened rows.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Your profile": {
+      "description": "The signed-in user's own profile.",
+      "parameters": {
+        "profile_avatar_upload": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: you can't add an avatar photo. Turns off profile_avatar_camera.",
+          "valueType": "BOOLEAN"
+        },
+        "profile_avatar_camera": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Take a photo when adding an avatar.",
+          "valueType": "BOOLEAN"
+        },
+        "profile_edit": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the Edit profile button.",
+          "valueType": "BOOLEAN"
+        },
+        "profile_change_phone": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Change phone number on the edit-profile screen.",
+          "valueType": "BOOLEAN"
+        },
+        "profile_edit_change_photo": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Change photo on the edit-profile and contact screens. Not built yet: off in release builds unless you publish true.",
+          "valueType": "BOOLEAN"
+        },
+        "accounts_switch": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Switch account in Settings and Edit profile. Not built yet: off in release builds unless you publish true.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Partner profile": {
+      "description": "The profile screen of the person you chat with.",
+      "parameters": {
+        "partner_profile_edit_contact": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the Edit button that renames or deletes the contact.",
+          "valueType": "BOOLEAN"
+        },
+        "partner_profile_mute": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Mute button. Not built yet: off in release builds unless you publish true.",
+          "valueType": "BOOLEAN"
+        },
+        "partner_profile_block": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Block button. Not built yet: off in release builds unless you publish true.",
+          "valueType": "BOOLEAN"
+        },
+        "partner_profile_shared_media": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Shared media tabs. Not built yet: off in release builds unless you publish true.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Appearance": {
+      "description": "Rows on the Appearance settings screen.",
+      "parameters": {
+        "appearance_wallpapers": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the wallpaper section. Turns off custom wallpapers and the intensity slider.",
+          "valueType": "BOOLEAN"
+        },
+        "appearance_custom_wallpaper": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the Add tile and saved wallpapers (with rename and delete).",
+          "valueType": "BOOLEAN"
+        },
+        "appearance_wallpaper_intensity": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the wallpaper intensity slider.",
+          "valueType": "BOOLEAN"
+        },
+        "appearance_dark_theme": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the Dark theme toggle.",
+          "valueType": "BOOLEAN"
+        },
+        "appearance_bar_position": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the navigation bar position setting.",
+          "valueType": "BOOLEAN"
+        },
+        "appearance_text_size": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the Text size setting.",
+          "valueType": "BOOLEAN"
+        },
+        "appearance_font": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides the Font setting.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Settings": {
+      "description": "Settings rows that are not finished. All are off in release builds unless you publish true.",
+      "parameters": {
+        "settings_privacy_controls": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Privacy toggles that only change local settings. Delete account always stays visible.",
+          "valueType": "BOOLEAN"
+        },
+        "settings_security": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "The Security row. Its items do nothing until the recovery-code work is merged.",
+          "valueType": "BOOLEAN"
+        },
+        "settings_notification_controls": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "The Notifications and Sounds row (local settings only).",
+          "valueType": "BOOLEAN"
+        },
+        "settings_data_storage": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "The Data and Storage row.",
+          "valueType": "BOOLEAN"
+        },
+        "settings_language": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "The Language row (no language is applied yet).",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "Notifications": {
+      "description": "Actions on message notifications.",
+      "parameters": {
+        "notification_inline_reply": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Reply on message notifications.",
+          "valueType": "BOOLEAN"
+        },
+        "notification_mark_read": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Mark as read on message notifications.",
+          "valueType": "BOOLEAN"
+        },
+        "notification_shortcuts": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: no conversation shortcuts. Turns off notification_bubbles.",
+          "valueType": "BOOLEAN"
+        },
+        "notification_bubbles": {
+          "defaultValue": { "useInAppDefault": true },
+          "description": "Off: hides Open in window and the chat bubble on notifications.",
+          "valueType": "BOOLEAN"
+        }
+      }
+    }
+  }
+}

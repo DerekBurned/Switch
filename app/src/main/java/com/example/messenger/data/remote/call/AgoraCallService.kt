@@ -3,9 +3,9 @@ package com.example.messenger.data.remote.call
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import android.view.SurfaceView
+import android.view.View
 import com.example.messenger.BuildConfig
-import com.example.messenger.domain.service.CallConnectionState
+import com.example.messenger.domain.model.call.CallConnectionState
 import com.example.messenger.domain.service.CallEventListener
 import com.example.messenger.domain.service.ICallService
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -25,6 +25,7 @@ class AgoraCallService @Inject constructor(
     private var listener: CallEventListener? = null
     private var videoModuleEnabled = false
     private var localVideoOn = false
+    private var lastRemoteUid: Int? = null
 
     private val handler = object : IRtcEngineEventHandler() {
         override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
@@ -103,11 +104,9 @@ class AgoraCallService @Inject constructor(
     }
 
     init {
-        require(BuildConfig.AGORA_APP_ID.isNotBlank()) {
-            "BuildConfig.AGORA_APP_ID is missing. Set AGORA_APP_ID in gradle.properties / local.properties."
-        }
-
-        try {
+        if (BuildConfig.AGORA_APP_ID.isBlank()) {
+            Log.e(TAG, "BuildConfig.AGORA_APP_ID is missing. Set AGORA_APP_ID in local.properties or as a Gradle property.")
+        } else try {
             val config = RtcEngineConfig().apply {
                 mContext = ctx
                 mAppId = BuildConfig.AGORA_APP_ID
@@ -156,6 +155,13 @@ class AgoraCallService @Inject constructor(
                 engine.stopPreview()
                 engine.enableLocalVideo(false)
             }
+            if (videoModuleEnabled) {
+                engine.setupLocalVideo(VideoCanvas(null, VideoCanvas.RENDER_MODE_HIDDEN, 0))
+                lastRemoteUid?.let {
+                    engine.setupRemoteVideo(VideoCanvas(null, VideoCanvas.RENDER_MODE_HIDDEN, it))
+                }
+                lastRemoteUid = null
+            }
             engine.leaveChannel()
         }
     }
@@ -189,22 +195,51 @@ class AgoraCallService @Inject constructor(
         engine?.switchCamera()
     }
 
-    override fun bindLocalVideo(view: SurfaceView) {
+    override fun bindLocalVideo(view: View) {
         val engine = engine ?: return
         ensureVideoModule(engine)
         engine.setupLocalVideo(VideoCanvas(view, VideoCanvas.RENDER_MODE_HIDDEN, 0))
     }
 
-    override fun bindRemoteVideo(view: SurfaceView, uid: Int) {
+    override fun bindRemoteVideo(view: View, uid: Int) {
         val engine = engine ?: return
         ensureVideoModule(engine)
+        lastRemoteUid = uid
         engine.setupRemoteVideo(VideoCanvas(view, VideoCanvas.RENDER_MODE_HIDDEN, uid))
+    }
+
+    override fun unbindLocalVideo() {
+        val engine = engine ?: return
+        if (!videoModuleEnabled) return
+        engine.setupLocalVideo(VideoCanvas(null, VideoCanvas.RENDER_MODE_HIDDEN, 0))
+    }
+
+    override fun unbindRemoteVideo(uid: Int) {
+        val engine = engine ?: return
+        if (!videoModuleEnabled) return
+        engine.setupRemoteVideo(VideoCanvas(null, VideoCanvas.RENDER_MODE_HIDDEN, uid))
+        if (lastRemoteUid == uid) lastRemoteUid = null
+    }
+
+    override fun setRemoteVideoQuality(uid: Int, low: Boolean) {
+        val engine = engine ?: return
+        if (!videoModuleEnabled) return
+        val type = if (low) {
+            io.agora.rtc2.Constants.VideoStreamType.VIDEO_STREAM_LOW
+        } else {
+            io.agora.rtc2.Constants.VideoStreamType.VIDEO_STREAM_HIGH
+        }
+        runCatching { engine.setRemoteVideoStreamType(uid, type) }
+            .onFailure { Log.w(TAG, "setRemoteVideoStreamType uid=$uid low=$low failed", it) }
     }
 
     private fun ensureVideoModule(engine: RtcEngine) {
         if (videoModuleEnabled) return
         videoModuleEnabled = true
         engine.enableVideo()
+        runCatching {
+            engine.setDualStreamMode(io.agora.rtc2.Constants.SimulcastStreamMode.ENABLE_SIMULCAST_STREAM)
+        }.onFailure { Log.w(TAG, "setDualStreamMode failed", it) }
     }
 
     override fun setEventListener(listener: CallEventListener) {

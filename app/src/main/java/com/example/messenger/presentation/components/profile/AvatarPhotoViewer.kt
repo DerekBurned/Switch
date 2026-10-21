@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.example.messenger.presentation.components.media.FullscreenMediaPager
-import com.example.messenger.presentation.components.media.MediaSource
+import com.example.messenger.presentation.components.media.model.MediaSource
 
 @Composable
 fun AvatarPhotoViewer(

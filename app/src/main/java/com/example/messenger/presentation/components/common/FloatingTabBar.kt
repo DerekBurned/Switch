@@ -47,15 +47,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
-import com.example.messenger.presentation.screens.ui.theme.MessengerTheme
-import com.example.messenger.presentation.screens.ui.theme.TextOnFieldDark
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
-
-enum class MainTab(val label: String) {
-    CHATS("Chats"),
-    CALLS("Calls"),
-    SETTINGS("Settings"),
-}
+import com.example.messenger.domain.featureflag.FeatureFlag
+import com.example.messenger.presentation.components.common.model.MainTab
+import com.example.messenger.presentation.featureflag.featureEnabled
+import com.example.messenger.presentation.theme.MessengerTheme
+import com.example.messenger.presentation.theme.TextOnFieldDark
+import com.example.messenger.presentation.theme.messengerTokens
 
 private val BarHeight = 48.dp
 private val RestingSearchSize = 48.dp
@@ -77,6 +74,7 @@ fun FloatingTabBar(
             .height(BarHeight),
     ) {
         val fullWidth = maxWidth
+        val searchEnabled = featureEnabled(FeatureFlag.SEARCH)
         val progress by animateFloatAsState(
             targetValue = if (isSearching) 1f else 0f,
             animationSpec = spring(dampingRatio = 0.9f, stiffness = 320f),
@@ -88,23 +86,25 @@ fun FloatingTabBar(
             onSelect = onSelect,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(end = RestingSearchSize + 8.dp)
+                .padding(end = if (searchEnabled) RestingSearchSize + 8.dp else 0.dp)
                 .graphicsLayer {
                     alpha = (1f - progress * 1.8f).coerceIn(0f, 1f)
                     translationX = -progress * 28.dp.toPx()
                 },
         )
 
-        SearchField(
-            width = lerp(RestingSearchSize, fullWidth, progress),
-            progress = progress,
-            isSearching = isSearching,
-            query = query,
-            onQueryChange = onQueryChange,
-            onOpen = onSearchOpen,
-            onClose = onSearchClose,
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
+        if (searchEnabled) {
+            SearchField(
+                width = lerp(RestingSearchSize, fullWidth, progress),
+                progress = progress,
+                isSearching = isSearching,
+                query = query,
+                onQueryChange = onQueryChange,
+                onOpen = onSearchOpen,
+                onClose = onSearchClose,
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
+        }
     }
 }
 
@@ -128,7 +128,7 @@ private fun SegmentedTabs(
         modifier = modifier
             .fillMaxHeight()
             .clip(barShape)
-            .background(tokens.trackFill)
+            .background(tokens.cardFill)
             .border(1.dp, tokens.panelBorder, barShape)
             .padding(5.dp)
             .drawBehind {
@@ -198,7 +198,7 @@ private fun SearchField(
             .width(width)
             .height(BarHeight)
             .clip(barShape)
-            .background(tokens.trackFill)
+            .background(tokens.cardFill)
             .border(1.dp, tokens.panelBorder, barShape)
             .clickable(
                 enabled = !isSearching,

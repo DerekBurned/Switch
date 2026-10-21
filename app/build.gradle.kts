@@ -6,34 +6,45 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.objectbox)
+    alias(libs.plugins.kover)
 }
 
 android {
     namespace = "com.example.messenger"
     compileSdk = 37
 
-    // AGORA_APP_ID resolves from local.properties (gitignored — preferred), then a Gradle
-    // project property (gradle.properties / -P / ORG_GRADLE_PROJECT_*), then a non-blank
-    // placeholder so the build never fails. The placeholder is NOT a working key: calls will
-    // have no audio (RtcEngine.create returns null) until a real Agora App ID is set.
     val agoraAppId: String = run {
         val props = Properties()
         rootProject.file("local.properties").takeIf { it.exists() }
             ?.inputStream()?.use { props.load(it) }
         props.getProperty("AGORA_APP_ID")
             ?: (project.findProperty("AGORA_APP_ID") as String?)
-            ?: "3d080c1db3ff4a80bef22c3b2cb6ea46"
+            ?: ""
     }
+
+    val featuresOffInRelease = listOf(
+        "profile_edit_change_photo",
+        "accounts_switch",
+        "partner_profile_mute",
+        "partner_profile_block",
+        "partner_profile_shared_media",
+        "settings_privacy_controls",
+        "settings_security",
+        "settings_notification_controls",
+        "settings_data_storage",
+        "settings_language",
+    )
 
     defaultConfig {
         applicationId = "com.example.messenger"
         minSdk = 29
         targetSdk = 36
-        versionCode = 112
-        versionName = "0.1.12"
+        versionCode = providers.gradleProperty("VERSION_CODE").get().toInt()
+        versionName = providers.gradleProperty("VERSION_NAME").get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -41,12 +52,19 @@ android {
         }
 
         buildConfigField("String", "AGORA_APP_ID", "\"$agoraAppId\"")
+        buildConfigField("String", "FEATURES_OFF_IN_RELEASE", "\"${featuresOffInRelease.joinToString(",")}\"")
 
 
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["crashlyticsCollectionEnabled"] = false
+            buildConfigField("String", "FEATURES_OFF_BY_DEFAULT", "\"\"")
+        }
         release {
+            manifestPlaceholders["crashlyticsCollectionEnabled"] = true
+            buildConfigField("String", "FEATURES_OFF_BY_DEFAULT", "\"${featuresOffInRelease.joinToString(",")}\"")
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")
@@ -64,6 +82,7 @@ android {
         target{
             compilerOptions {
                 optIn.add("kotlin.RequiresOptIn")
+                freeCompilerArgs.add("-XXLanguage:+PropertyParamAnnotationDefaultTargetMode")
             }
         }
     }
@@ -86,6 +105,9 @@ android {
                 test.useJUnitPlatform()
                 test.maxHeapSize = "512m"
                 test.maxParallelForks = 1
+                test.inputs.file(rootProject.file("remoteconfig.template.json"))
+                    .withPropertyName("remoteConfigTemplate")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
             }
         }
     }
@@ -120,10 +142,6 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.runtime.saveable)
 
-    // Haze - Native Glass/Blur Effect
-    implementation("dev.chrisbanes.haze:haze:1.7.2")
-
-
     // Firebase - BOM manages all versions
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
@@ -132,6 +150,8 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.database)
     implementation(libs.firebase.functions)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.config)
 
     // Hilt - using KSP
     implementation(libs.hilt.android)
@@ -203,10 +223,42 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testRuntimeOnly(libs.junit.vintage.engine)
+    testImplementation(libs.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                classes(
+                    "*_",
+                    "*.MyObjectBox",
+                    "*Cursor",
+                    "*_Factory",
+                    "*_MembersInjector",
+                    "*_HiltModules*",
+                    "*.Hilt_*",
+                    "*ComposableSingletons*",
+                    "*.BuildConfig",
+                    "hilt_aggregated_deps.*",
+                    "dagger.hilt.internal.*",
+                )
+                packages("com.example.messenger.di")
+            }
+        }
+        verify {
+            rule {
+                minBound(28)
+            }
+        }
+    }
 }

@@ -3,8 +3,8 @@ package com.example.messenger.data.remote.call
 import com.example.messenger.data.remote.dto.CallSignalDto
 import com.example.messenger.data.remote.dto.toCallSignal
 import com.example.messenger.data.remote.dto.toDto
-import com.example.messenger.domain.model.CallSignal
-import com.example.messenger.domain.model.CallStatus
+import com.example.messenger.domain.model.call.CallSignal
+import com.example.messenger.domain.model.call.CallStatus
 import com.example.messenger.domain.service.ICallSignalingService
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError

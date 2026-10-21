@@ -23,6 +23,16 @@ class SyncCoordinator @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
 
+    fun stop() {
+        job?.cancel()
+        job = null
+    }
+
+    fun restart() {
+        stop()
+        start()
+    }
+
     fun start() {
         if (job?.isActive == true) return
         syncManager.triggerOneTimeSync()

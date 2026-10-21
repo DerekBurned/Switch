@@ -6,10 +6,12 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotEmpty
 import assertk.assertions.isTrue
+import com.example.messenger.data.crypto.model.IdentityKey
+import com.example.messenger.data.crypto.model.PeerKey
 import com.example.messenger.data.remote.auth.FirebaseAuthService
-import com.example.messenger.domain.model.CallType
 import com.example.messenger.domain.model.MediaItem
 import com.example.messenger.domain.model.Message
+import com.example.messenger.domain.model.call.CallType
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

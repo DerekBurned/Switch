@@ -2,6 +2,7 @@ package com.example.messenger.data.local.obx
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import com.example.messenger.data.local.obx.mappers.toDomain
 import com.example.messenger.domain.model.MessageStatus
 import org.junit.jupiter.api.Test
 

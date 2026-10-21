@@ -4,22 +4,19 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.example.messenger.data.crypto.E2eeMessageCodec
-import com.example.messenger.data.crypto.MediaCipher
-import com.example.messenger.data.crypto.b64
-import com.example.messenger.data.crypto.unb64
 import com.example.messenger.data.local.obx.ObxConversation
 import com.example.messenger.data.local.obx.ObxConversation_
 import com.example.messenger.data.local.obx.ObxMessage
 import com.example.messenger.data.local.obx.ObxMessage_
 import com.example.messenger.data.local.obx.ObxSyncQueueItem
-import com.example.messenger.data.local.obx.toDomain
-import com.example.messenger.data.local.obx.toObx
+import com.example.messenger.data.local.obx.mappers.toDomain
+import com.example.messenger.data.local.obx.mappers.toObx
 import com.example.messenger.data.media.MediaCache
+import com.example.messenger.data.media.MediaFileTransfer
 import com.example.messenger.data.media.MediaMetadata
 import com.example.messenger.data.media.MediaTransferManager
 import com.example.messenger.data.remote.auth.FirebaseAuthService
 import com.example.messenger.data.remote.firebase.FirestoreService
-import com.example.messenger.domain.model.CallType
 import com.example.messenger.domain.model.MediaItem
 import com.example.messenger.domain.model.MediaTransfer
 import com.example.messenger.domain.model.Message
@@ -37,7 +34,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import java.io.File
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -52,6 +48,7 @@ class MediaRepositoryImpl @Inject constructor(
     private val firestoreService: FirestoreService,
     private val manager: MediaTransferManager,
     private val mediaCache: MediaCache,
+    private val fileTransfer: MediaFileTransfer,
     private val mediaMetadata: MediaMetadata,
     private val authService: FirebaseAuthService,
     private val codec: E2eeMessageCodec,
@@ -75,19 +72,7 @@ class MediaRepositoryImpl @Inject constructor(
     override fun downloadMedia(item: MediaItem) {
         scope.launch {
             val dest = mediaCache.fileFor(item.id, item.kind)
-            val fileKey = item.fileKey
-            if (fileKey.isNullOrBlank()) {
-                manager.download(item.id, item.url, dest)
-            } else {
-                val encrypted = File(context.cacheDir, "${item.id}.enc.dl")
-                manager.download(item.id, item.url, encrypted)
-                if (encrypted.exists() && encrypted.length() > 0) {
-                    runCatching { MediaCipher.decrypt(unb64(fileKey), encrypted, dest) }
-                        .onFailure { Log.w(TAG, "media decrypt failed: ${item.id}", it) }
-                }
-                encrypted.delete()
-            }
-            manager.clear(item.id)
+            fileTransfer.download(item.id, item.url, item.fileKey, dest)
         }
     }
 
@@ -173,22 +158,17 @@ class MediaRepositoryImpl @Inject constructor(
                     launch {
                         val file = mediaCache.fileFor(item.id, item.kind)
                         val path = storagePath(original.conversationId, messageId, item)
-                        val fileKey = if (encryptActive) MediaCipher.generateFileKey() else null
-                        val uploadFile = if (fileKey != null) {
-                            File(context.cacheDir, "${item.id}.enc").also {
-                                MediaCipher.encrypt(fileKey, file, it)
-                            }
-                        } else {
-                            file
-                        }
-                        val result = manager.upload(item.id, uploadFile, path)
-                        if (fileKey != null) uploadFile.delete()
-                        if (result.isSuccess) {
-                            val url = result.getOrThrow()
+                        val result = fileTransfer.upload(item.id, file, path, encryptActive)
+                        val uploaded = result.getOrNull()
+                        if (uploaded != null) {
                             val current = loadMessage(messageId) as? Message.Media
                             putMedia(messageId, current?.items.orEmpty().map {
                                 if (it.id == item.id) {
-                                    it.copy(url = url, storagePath = path, fileKey = fileKey?.let(::b64))
+                                    it.copy(
+                                        url = uploaded.url,
+                                        storagePath = path,
+                                        fileKey = uploaded.fileKey,
+                                    )
                                 } else {
                                     it
                                 }

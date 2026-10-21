@@ -6,8 +6,10 @@ import com.example.messenger.BuildConfig
 import com.example.messenger.R
 import com.example.messenger.data.remote.call.ActiveCallHolder
 import com.example.messenger.data.remote.call.CallForegroundService
+import com.example.messenger.data.remote.call.IncomingCallGate
 import com.example.messenger.data.remote.call.telecom.TelecomCallManager
 import com.example.messenger.data.remote.call.telecom.TelecomCallMeta
+import com.example.messenger.domain.featureflag.FeatureFlags
 import com.example.messenger.presentation.notification.ChatNotifier
 import com.example.messenger.presentation.notification.CurrentConversationHolder
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -19,6 +21,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -27,6 +30,8 @@ interface FcmEntryPoint {
     fun telecomCallManager(): TelecomCallManager
     fun messageRepository(): com.example.messenger.domain.repository.IMessageRepository
     fun e2eeCodec(): com.example.messenger.data.crypto.E2eeMessageCodec
+    fun incomingCallGate(): IncomingCallGate
+    fun featureFlags(): FeatureFlags
 }
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
@@ -54,7 +59,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         super.onMessageReceived(remoteMessage)
 
         val data = remoteMessage.data
-        Log.d(TAG, "onMessageReceived: from=${remoteMessage.from} type=${data["type"]} data=$data")
+        Log.d(TAG, "onMessageReceived: from=${remoteMessage.from} type=${data["type"]}")
 
         if (com.google.firebase.auth.FirebaseAuth.getInstance().currentUser == null) {
             Log.d(TAG, "onMessageReceived: no authenticated user, ignoring")
@@ -101,7 +106,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     .onFailure { Log.w(TAG, "persistIncomingMessage failed", it) }
             }
             if (CurrentConversationHolder.isOpen(conversationId)) return@launch
+            entryPoint.featureFlags().awaitFresh()
+            val clipLabel = clipLabelFor(
+                msgType = resolved.type,
+                voice = getString(R.string.clip_voice_message),
+                video = getString(R.string.clip_video_message),
+            )
             val body = when {
+                clipLabel != null -> clipLabel
                 message is com.example.messenger.domain.model.Message.Text &&
                     message.text != com.example.messenger.data.crypto.E2eeMessageCodec.UNDECRYPTABLE_TEXT ->
                     message.text
@@ -127,10 +139,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val callerId = data["callerId"].orEmpty()
         val callerName = data["callerName"].orEmpty().ifBlank { callerId }
         val channelName = data["channelName"].orEmpty()
+        val video = data["video"].toBoolean()
         val calleeId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
         if (callId.isBlank() || channelName.isBlank() || calleeId.isBlank()) return
 
         if (ActiveCallHolder.snapshot()?.callId == callId) return
+
+        val gate = EntryPointAccessors.fromApplication(applicationContext, FcmEntryPoint::class.java)
+            .incomingCallGate()
+        if (!runBlocking { gate.admit(calleeId, callId) }) return
 
         val intent = CallForegroundService.incomingIntent(
             ctx = this,
@@ -140,6 +157,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             channelName = channelName,
             partnerName = callerName,
             partnerPhone = "",
+            video = video,
         )
         ContextCompat.startForegroundService(this, intent)
 
@@ -151,6 +169,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             partnerName = callerName,
             partnerPhone = "",
             isIncoming = true,
+            isVideo = video,
         )
         runCatching {
             EntryPointAccessors.fromApplication(applicationContext, FcmEntryPoint::class.java)

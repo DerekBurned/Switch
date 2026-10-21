@@ -1,10 +1,10 @@
 package com.example.messenger.data.sync
 
-import android.net.ConnectivityManager
-import androidx.core.content.getSystemService
 import android.content.Context
+import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import androidx.core.content.getSystemService
 import com.example.messenger.util.NetworkUtils
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow

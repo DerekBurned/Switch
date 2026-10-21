@@ -1,7 +1,5 @@
 package com.example.messenger.presentation.components.media
 
-import com.example.messenger.presentation.components.common.MessageStatusIcon
-import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,16 +43,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.messenger.data.media.BlurHashCache
-import com.example.messenger.data.media.MediaCache
+import com.example.messenger.domain.featureflag.FeatureFlag
 import com.example.messenger.domain.model.MediaItem
 import com.example.messenger.domain.model.MediaTransfer
 import com.example.messenger.domain.model.Message
 import com.example.messenger.domain.model.MessageStatus
-
-import com.example.messenger.presentation.screens.ui.theme.BubbleSent
-import com.example.messenger.presentation.screens.ui.theme.BubbleSentTop
-import com.example.messenger.presentation.screens.ui.theme.LightGray
-import com.example.messenger.presentation.screens.ui.theme.messengerTokens
+import com.example.messenger.presentation.components.common.MessageStatusIcon
+import com.example.messenger.presentation.featureflag.featureEnabled
+import com.example.messenger.presentation.theme.BubbleSent
+import com.example.messenger.presentation.theme.BubbleSentTop
+import com.example.messenger.presentation.theme.LightGray
+import com.example.messenger.presentation.theme.messengerTokens
 import com.example.messenger.util.DateUtils
 import java.io.File
 
@@ -242,7 +241,7 @@ private fun MediaCell(
                     MediaContent(item, file, blur, showFile = true, showPlay = item.kind == MediaItem.VIDEO)
                 } else {
                     MediaContent(item, file, blur, showFile = false, showPlay = false)
-                    DownloadButton(onDownload)
+                    if (featureEnabled(FeatureFlag.MEDIA_DOWNLOAD)) DownloadButton(onDownload)
                 }
             }
         }
@@ -292,11 +291,12 @@ private fun MediaContent(
 
 @Composable
 private fun TransferScrim(progress: Float, onCancel: () -> Unit) {
+    val cancelEnabled = featureEnabled(FeatureFlag.MEDIA_CANCEL_TRANSFER)
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.4f))
-            .clickable(onClick = onCancel),
+            .clickable(enabled = cancelEnabled, onClick = onCancel),
         contentAlignment = Alignment.Center,
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -307,12 +307,14 @@ private fun TransferScrim(progress: Float, onCancel: () -> Unit) {
                 trackColor = Color.White.copy(alpha = 0.3f),
                 strokeWidth = 3.dp,
             )
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Cancel",
-                tint = Color.White,
-                modifier = Modifier.size(22.dp),
-            )
+            if (cancelEnabled) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Cancel",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
         }
     }
 }
@@ -335,6 +337,3 @@ private fun DownloadButton(onDownload: () -> Unit) {
         )
     }
 }
-
-fun mediaCacheFile(context: Context, item: MediaItem): File =
-    File(File(context.cacheDir, MediaCache.DIR), MediaCache.fileName(item.id, item.kind))

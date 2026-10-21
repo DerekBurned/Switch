@@ -44,4 +44,35 @@ class MediaCipherTest {
         val result = runCatching { MediaCipher.decrypt(key, encrypted, restored) }
         assertThat(result.isSuccess && restored.exists()).isFalse()
     }
+
+    @Test
+    fun `a failed decrypt leaves an existing destination untouched`() {
+        val source = File(dir, "plain.bin").apply { writeBytes(Random.nextBytes(4096)) }
+        val encrypted = File(dir, "cipher.bin")
+        val previous = Random.nextBytes(512)
+        val restored = File(dir, "restored.bin").apply { writeBytes(previous) }
+        val key = MediaCipher.generateFileKey()
+
+        MediaCipher.encrypt(key, source, encrypted)
+        val bytes = encrypted.readBytes()
+        bytes[bytes.size / 2] = (bytes[bytes.size / 2].toInt() xor 1).toByte()
+        encrypted.writeBytes(bytes)
+        runCatching { MediaCipher.decrypt(key, encrypted, restored) }
+
+        assertThat(restored.readBytes().toList()).isEqualTo(previous.toList())
+    }
+
+    @Test
+    fun `decrypt replaces an existing destination`() {
+        val content = Random.nextBytes(4096)
+        val source = File(dir, "plain.bin").apply { writeBytes(content) }
+        val encrypted = File(dir, "cipher.bin")
+        val restored = File(dir, "restored.bin").apply { writeBytes(Random.nextBytes(100)) }
+        val key = MediaCipher.generateFileKey()
+
+        MediaCipher.encrypt(key, source, encrypted)
+        MediaCipher.decrypt(key, encrypted, restored)
+
+        assertThat(restored.readBytes().toList()).isEqualTo(content.toList())
+    }
 }

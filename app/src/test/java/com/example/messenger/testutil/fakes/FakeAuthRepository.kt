@@ -15,6 +15,8 @@ class FakeAuthRepository : IAuthRepository {
     val authState = MutableStateFlow<DomainUser?>(null)
     var loginResult: Resource<User> = Resource.Success(User())
     var loggedOut = false
+    var deleteResult: Result<Unit> = Result.success(Unit)
+    var deleteCalls = 0
 
     override suspend fun linkPhoneToAccount(credential: PhoneAuthCredential): Flow<Resource<Unit>> =
         flowOf(Resource.Success(Unit))
@@ -28,6 +30,11 @@ class FakeAuthRepository : IAuthRepository {
     override suspend fun logout() {
         loggedOut = true
         loggedInUser = null
+    }
+
+    override suspend fun deleteAccount(): Result<Unit> {
+        deleteCalls++
+        return deleteResult
     }
 
     override fun getCurrentUser(): User? = loggedInUser

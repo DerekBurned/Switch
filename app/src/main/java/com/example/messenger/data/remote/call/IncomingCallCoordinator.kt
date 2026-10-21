@@ -27,6 +27,7 @@ class IncomingCallCoordinator @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val userRepository: IUserRepository,
     private val telecomCallManager: TelecomCallManager,
+    private val incomingCallGate: IncomingCallGate,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var observerJob: Job? = null
@@ -52,6 +53,9 @@ class IncomingCallCoordinator @Inject constructor(
                 if (ActiveCallHolder.snapshot()?.callId == signal.callId) return@collectLatest
                 lastSeenCallId = signal.callId
                 val partnerName = resolveCallerName(signal.callerId)
+                if (!incomingCallGate.admit(signal.calleeId, signal.callId)) {
+                    return@collectLatest
+                }
                 val intent = CallForegroundService.incomingIntent(
                     ctx = context,
                     callId = signal.callId,

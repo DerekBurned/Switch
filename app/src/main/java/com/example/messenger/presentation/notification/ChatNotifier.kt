@@ -22,8 +22,11 @@ import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import com.example.messenger.R
+import com.example.messenger.di.UiEntryPoints
+import com.example.messenger.domain.featureflag.FeatureFlag
 import com.example.messenger.presentation.BubbleActivity
 import com.example.messenger.presentation.MainActivity
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -78,7 +81,9 @@ object ChatNotifier {
             state.partnerIcon = icon
             state.messages.add(Entry(text, timestamp, senderId, senderName, fromMe = false))
             trim(state)
-            ConversationShortcuts.push(context, conversationId, state.partnerId, state.partnerName, icon)
+            if (flagOn(context, FeatureFlag.NOTIFICATION_SHORTCUTS)) {
+                ConversationShortcuts.push(context, conversationId, state.partnerId, state.partnerName, icon)
+            }
             post(context, conversationId, state, silent = false)
             postSummary(context)
         }
@@ -93,7 +98,22 @@ object ChatNotifier {
         }
     }
 
+    fun refresh(context: Context, conversationId: String) {
+        synchronized(lock) {
+            val state = states[conversationId]
+            if (state == null) {
+                context.getSystemService<NotificationManager>()?.cancel(conversationId.hashCode())
+                return
+            }
+            post(context, conversationId, state, silent = true)
+        }
+    }
+
     fun openAsBubble(context: Context, conversationId: String, partnerId: String, partnerName: String) {
+        if (!flagOn(context, FeatureFlag.NOTIFICATION_BUBBLES)) {
+            refresh(context, conversationId)
+            return
+        }
         synchronized(lock) {
             val state = states[conversationId] ?: ConvState(
                 partnerId = partnerId,
@@ -165,14 +185,27 @@ object ChatNotifier {
             .setShortcutId(conversationId)
             .setLocusId(LocusIdCompat(conversationId))
             .setContentIntent(contentIntent(context, conversationId, state))
-            .addAction(replyAction(context, conversationId, state))
-            .addAction(openInWindowAction(context, conversationId, state))
-            .addAction(markReadAction(context, conversationId))
-        if (expandAsBubble) {
+        if (flagOn(context, FeatureFlag.NOTIFICATION_INLINE_REPLY)) {
+            builder.addAction(replyAction(context, conversationId, state))
+        }
+        val bubblesEnabled = flagOn(context, FeatureFlag.NOTIFICATION_BUBBLES)
+        if (bubblesEnabled) {
+            builder.addAction(openInWindowAction(context, conversationId, state))
+        }
+        if (flagOn(context, FeatureFlag.NOTIFICATION_MARK_READ)) {
+            builder.addAction(markReadAction(context, conversationId))
+        }
+        if (expandAsBubble && bubblesEnabled) {
             builder.setBubbleMetadata(bubbleMetadata(context, conversationId, state))
         }
         nm.notify(conversationId.hashCode(), builder.build())
     }
+
+    private fun flagOn(context: Context, flag: FeatureFlag): Boolean = runCatching {
+        EntryPointAccessors.fromApplication(context.applicationContext, UiEntryPoints::class.java)
+            .featureFlags()
+            .isEnabled(flag)
+    }.getOrDefault(true)
 
     private fun bubbleMetadata(
         context: Context,

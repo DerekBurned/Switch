@@ -12,10 +12,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -33,34 +33,16 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import com.example.messenger.presentation.screens.ui.theme.Motion
+import com.example.messenger.domain.featureflag.FeatureFlag
+import com.example.messenger.presentation.components.chat.model.MessageAction
+import com.example.messenger.presentation.components.chat.model.MessageContextMenuItem
+import com.example.messenger.presentation.components.chat.model.MessageContextMenuState
+import com.example.messenger.presentation.featureflag.featureEnabled
+import com.example.messenger.presentation.theme.Motion
 import kotlin.math.roundToInt
-
-@Stable
-class MessageContextMenuState {
-    var active by mutableStateOf<MessageContextMenuItem?>(null)
-        private set
-    internal var renderingKey by mutableStateOf<Any?>(null)
-
-    fun open(item: MessageContextMenuItem) {
-        active = item
-    }
-
-    fun dismiss() {
-        active = null
-    }
-}
 
 @Composable
 fun rememberMessageContextMenuState(): MessageContextMenuState = remember { MessageContextMenuState() }
-
-class MessageContextMenuItem(
-    val key: Any,
-    val sourceBounds: Rect,
-    val isMe: Boolean,
-    val actions: List<MessageAction>,
-    val content: @Composable () -> Unit,
-)
 
 @Composable
 fun LongPressMessage(
@@ -74,14 +56,18 @@ fun LongPressMessage(
 ) {
     val hidden = state.renderingKey == messageKey
     var bounds by remember { mutableStateOf(Rect.Zero) }
+    val menuEnabled = featureEnabled(FeatureFlag.MESSAGE_MENU) && actions.isNotEmpty()
+    val currentActions by rememberUpdatedState(actions)
+    val currentPreview by rememberUpdatedState(preview)
     Box(
         modifier = modifier
             .onGloballyPositioned { bounds = it.boundsInRoot() }
             .graphicsLayer { alpha = if (hidden) 0f else 1f }
-            .pointerInput(messageKey) {
+            .pointerInput(messageKey, menuEnabled) {
+                if (!menuEnabled) return@pointerInput
                 detectTapGestures(
                     onLongPress = {
-                        state.open(MessageContextMenuItem(messageKey, bounds, isMe, actions, preview))
+                        state.open(MessageContextMenuItem(messageKey, bounds, isMe, currentActions, currentPreview))
                     },
                 )
             },
