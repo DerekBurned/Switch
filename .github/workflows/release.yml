@@ -4,10 +4,12 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+*'
-  pull_request:
-    paths:
-      - '.github/workflows/release.yml'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 0.2.1.0. Leave empty for a test build without a release.'
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -67,8 +69,41 @@ jobs:
           mkdir -p "$keystore_dir"
           echo "$DEBUG_KEYSTORE_BASE64" | base64 --decode > "$keystore_dir/debug.keystore"
 
+      - name: Set requested version
+        if: inputs.version != ''
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "::error::Releases are cut from $DEFAULT_BRANCH. Run this workflow on $DEFAULT_BRANCH, or leave the version empty for a test build."
+            exit 1
+          fi
+          if [[ ! "$REQUESTED_VERSION" =~ ^([0-9]+)\.([0-9]{1,2})\.([0-9]{1,2})(\.([0-9]{1,2}))?$ ]]; then
+            echo "::error::Version $REQUESTED_VERSION must look like major.minor.patch or major.minor.patch.hotfix, with minor, patch and hotfix below 100."
+            exit 1
+          fi
+          major=$((10#${BASH_REMATCH[1]}))
+          minor=$((10#${BASH_REMATCH[2]}))
+          patch=$((10#${BASH_REMATCH[3]}))
+          hotfix=$((10#${BASH_REMATCH[5]:-0}))
+          new_code=$((major * 1000000 + minor * 10000 + patch * 100 + hotfix))
+          old_code=$(grep '^VERSION_CODE=' gradle.properties | cut -d= -f2 | tr -d '\r')
+          if [ "$new_code" -le "$old_code" ]; then
+            echo "::error::Version $REQUESTED_VERSION gives VERSION_CODE $new_code, which is not above the current $old_code."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$REQUESTED_VERSION" > /dev/null; then
+            echo "::error::Tag $REQUESTED_VERSION already exists."
+            exit 1
+          fi
+          sed -i "s/^VERSION_CODE=.*/VERSION_CODE=$new_code/; s/^VERSION_NAME=.*/VERSION_NAME=$REQUESTED_VERSION/" gradle.properties
+          echo "Set version to $REQUESTED_VERSION ($new_code)"
+
       - name: Read version
         id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           version_name=$(grep '^VERSION_NAME=' gradle.properties | cut -d= -f2 | tr -d '\r')
           version_code=$(grep '^VERSION_CODE=' gradle.properties | cut -d= -f2 | tr -d '\r')
@@ -76,8 +111,14 @@ jobs:
             echo "::error::VERSION_NAME and VERSION_CODE must be set in gradle.properties."
             exit 1
           fi
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            release_tag="$GITHUB_REF_NAME"
+          else
+            release_tag="$REQUESTED_VERSION"
+          fi
           echo "name=$version_name" >> "$GITHUB_OUTPUT"
           echo "code=$version_code" >> "$GITHUB_OUTPUT"
+          echo "tag=$release_tag" >> "$GITHUB_OUTPUT"
           echo "Building $version_name ($version_code)"
 
       - name: Check tag matches version
@@ -107,19 +148,32 @@ jobs:
           cp app/build/outputs/bundle/release/app-release.aab "dist/Switch-${{ steps.version.outputs.name }}.aab"
           ls -l dist
 
+      - name: Commit version and push tag
+        if: inputs.version != ''
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gradle.properties
+          git commit -m "chore(release): bump version to $RELEASE_TAG"
+          git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
+          git push --atomic origin "HEAD:refs/heads/$GITHUB_REF_NAME" "refs/tags/$RELEASE_TAG"
+
       - name: Create GitHub release
-        if: github.ref_type == 'tag'
+        if: steps.version.outputs.tag != ''
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* \
-            --title "$GITHUB_REF_NAME" \
+          gh release create "$RELEASE_TAG" dist/* \
+            --title "$RELEASE_TAG" \
             --generate-notes \
             --verify-tag
 
       - name: Upload build outputs
-        if: github.ref_type != 'tag'
+        if: steps.version.outputs.tag == ''
         uses: actions/upload-artifact@v4
         with:
           name: Switch-${{ steps.version.outputs.name }}
