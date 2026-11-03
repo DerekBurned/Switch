@@ -13,6 +13,8 @@ interface IClipRepository {
 
     suspend fun cachedFile(messageId: String): File?
 
+    fun registerRemoteClip(message: Message.Clip)
+
     suspend fun markPlayed(messageId: String)
 
     suspend fun nextVoiceClip(afterMessageId: String): Message.Clip?

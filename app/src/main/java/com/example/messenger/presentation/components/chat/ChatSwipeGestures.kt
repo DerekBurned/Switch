@@ -85,7 +85,6 @@ fun SwipeToReply(
         )
         Box(
             modifier = Modifier
-                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
                 .pointerInput(swipeEnabled) {
                     if (!swipeEnabled) return@pointerInput
                     val slop = viewConfiguration.touchSlop
@@ -128,7 +127,8 @@ fun SwipeToReply(
                             if (shouldReply) onReply()
                         }
                     }
-                },
+                }
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) },
         ) {
             content()
         }

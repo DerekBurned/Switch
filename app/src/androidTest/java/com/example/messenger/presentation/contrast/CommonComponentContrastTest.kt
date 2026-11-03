@@ -13,6 +13,7 @@ import com.example.messenger.presentation.components.common.MessengerAvatar
 import com.example.messenger.presentation.components.common.MessengerInputField
 import com.example.messenger.presentation.components.common.MessengerSearchField
 import com.example.messenger.presentation.components.common.NavHeaderPill
+import com.example.messenger.presentation.components.common.OtpCodeField
 import com.example.messenger.presentation.components.common.PillButton
 import com.example.messenger.presentation.components.common.SectionHeader
 import com.example.messenger.presentation.components.common.SegmentedToggle
@@ -54,6 +55,22 @@ class CommonComponentContrastTest {
     @Test
     fun messengerInputField() = compose.assertReadableInBothThemes("MessengerInputField") {
         MessengerInputField(value = "Typed value", onValueChange = {}, placeholder = "Placeholder")
+    }
+
+    @Test
+    fun messengerInputFieldEmpty() = compose.assertReadableInBothThemes(
+        "MessengerInputField empty",
+        texts = setOf("Enter phone number"),
+    ) {
+        MessengerInputField(value = "", onValueChange = {}, placeholder = "Enter phone number")
+    }
+
+    @Test
+    fun otpCodeFieldEmpty() = compose.assertReadableInBothThemes(
+        "OtpCodeField empty",
+        texts = setOf("Enter code"),
+    ) {
+        OtpCodeField(value = "", onValueChange = {}, ringProgress = { 1f }, expired = false, onRetry = {})
     }
 
     @Test

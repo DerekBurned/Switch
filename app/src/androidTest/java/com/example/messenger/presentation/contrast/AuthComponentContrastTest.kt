@@ -9,6 +9,7 @@ import com.example.messenger.presentation.components.auth.CountryCodePicker
 import com.example.messenger.presentation.components.auth.StepIndicator
 import com.example.messenger.presentation.components.auth.model.AuthMode
 import com.example.messenger.presentation.components.auth.model.Country
+import com.example.messenger.presentation.screens.auth.AuthScreenContent
 import com.example.messenger.presentation.screens.changephone.ChangePhoneStep
 import org.junit.Rule
 import org.junit.Test
@@ -26,6 +27,30 @@ class AuthComponentContrastTest {
 
     @get:Rule
     val compose = createComposeRule()
+
+    @Test
+    fun authScreenCodeSentLine() = compose.assertReadableInBothThemes(
+        component = "AuthScreenContent code sent",
+        texts = setOf("Code sent to +1 5550100"),
+    ) {
+        AuthScreenContent(
+            mode = AuthMode.LOGIN,
+            selectedCountry = country,
+            nationalNumber = "5550100",
+            username = "",
+            otp = "",
+            isLoading = false,
+            error = null,
+            codeSent = true,
+            onModeChange = {},
+            onCountryChange = {},
+            onNationalNumberChange = {},
+            onUsernameChange = {},
+            onOtpChange = {},
+            onSendOtp = {},
+            onVerifyOtp = {},
+        )
+    }
 
     @Test
     fun authInputTextFieldEmpty() = compose.assertReadableInBothThemes("AuthInputTextField empty") {

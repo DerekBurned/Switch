@@ -1,6 +1,7 @@
 package com.example.messenger.presentation.screens.auth
 
 import android.app.Activity
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import assertk.assertThat
 import assertk.assertions.isEqualTo
@@ -13,6 +14,7 @@ import com.example.messenger.data.remote.auth.FirebaseAuthService
 import com.example.messenger.data.remote.firebase.FirebaseMessagingManager
 import com.example.messenger.data.remote.firebase.FirestoreService
 import com.example.messenger.data.sync.SyncCoordinator
+import com.example.messenger.domain.model.AuthAccountException
 import com.example.messenger.domain.model.DomainUser
 import com.example.messenger.domain.model.RemoteUserSnapshot
 import com.example.messenger.domain.model.User
@@ -23,6 +25,8 @@ import com.example.messenger.domain.usecase.auth.ObserveAuthStateUseCase
 import com.example.messenger.domain.usecase.auth.ObserveSessionStateUseCase
 import com.example.messenger.domain.usecase.sync.BackfillRecentHistoryUseCase
 import com.example.messenger.presentation.base.UiText
+import com.example.messenger.presentation.components.auth.model.AuthMode
+import com.example.messenger.presentation.components.auth.model.Countries
 import com.example.messenger.testutil.AndroidLogExtension
 import com.example.messenger.testutil.MainDispatcherExtension
 import com.example.messenger.testutil.fakes.FakeAuthFlowGate
@@ -66,6 +70,7 @@ class AuthViewModelTest {
     }
     private val activity = mockk<Activity>()
     private val credential = mockk<PhoneAuthCredential>()
+    private val savedStateHandle = SavedStateHandle()
 
     private fun createViewModel() = AuthViewModel(
         loginWithPhoneNumberUseCase = LoginWithPhoneNumberUseCase(authRepository),
@@ -85,7 +90,14 @@ class AuthViewModelTest {
             FakeConversationRepository(),
             FakeMessageRepository(),
         ),
+        savedStateHandle = savedStateHandle,
     )
+
+    private fun AuthViewModel.fillForm() {
+        dispatch(AuthIntent.SelectCountry(Countries.all.first { it.isoCode == "PL" }))
+        dispatch(AuthIntent.ChangeNationalNumber("883506439"))
+        dispatch(AuthIntent.ChangeUsername("tester"))
+    }
 
     private fun AuthViewModel.sendCode(result: Result<VerificationResult>) {
         coEvery { authService.sendVerificationCode("+12025550123", activity) } returns result
@@ -167,6 +179,98 @@ class AuthViewModelTest {
     }
 
     @Test
+    fun `registering an already registered number returns to the first step in login mode`() = runTest {
+        authRepository.loginResult = Resource.Failure(AuthAccountException.AlreadyRegistered())
+        val viewModel = createViewModel()
+        viewModel.fillForm()
+        viewModel.sendCode(Result.success(VerificationResult.CodeSent("vid")))
+        every { authService.verifyCode("123456", "vid") } returns Result.success(credential)
+
+        viewModel.dispatch(AuthIntent.VerifyOtpAndLogin("123456"))
+
+        val state = viewModel.state.value
+        assertThat(state.errorId()).isEqualTo(R.string.auth_error_number_registered)
+        assertThat(state.mode).isEqualTo(AuthMode.LOGIN)
+        assertThat(state.codeSent).isFalse()
+        assertThat(state.verificationId).isNull()
+        assertThat(state.isLoading).isFalse()
+        assertThat(state.otp).isEqualTo("")
+        assertThat(state.country.isoCode).isEqualTo("PL")
+        assertThat(state.nationalNumber).isEqualTo("883506439")
+        assertThat(state.username).isEqualTo("tester")
+        assertThat(savedStateHandle.get<String>("auth_mode")).isEqualTo(AuthMode.LOGIN.name)
+        verify(exactly = 0) { presenceManager.goOnline(any()) }
+    }
+
+    @Test
+    fun `logging in with an unregistered number returns to the first step in register mode`() = runTest {
+        authRepository.loginResult = Resource.Failure(AuthAccountException.NotRegistered())
+        val viewModel = createViewModel()
+        viewModel.dispatch(AuthIntent.SelectMode(AuthMode.LOGIN))
+        viewModel.sendCode(Result.success(VerificationResult.CodeSent("vid")))
+        every { authService.verifyCode("123456", "vid") } returns Result.success(credential)
+
+        viewModel.dispatch(AuthIntent.VerifyOtpAndLogin("123456"))
+
+        assertThat(viewModel.state.value.errorId()).isEqualTo(R.string.auth_error_number_not_registered)
+        assertThat(viewModel.state.value.mode).isEqualTo(AuthMode.REGISTER)
+        assertThat(viewModel.state.value.codeSent).isFalse()
+    }
+
+    @Test
+    fun `the phone number is sanitised, validated and kept across a country change`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.dispatch(AuthIntent.SelectCountry(Countries.all.first { it.isoCode == "PL" }))
+        viewModel.dispatch(AuthIntent.ChangeNationalNumber("883-506 439"))
+
+        assertThat(viewModel.state.value.nationalNumber).isEqualTo("883506439")
+        assertThat(viewModel.state.value.phoneValid).isTrue()
+
+        viewModel.dispatch(AuthIntent.SelectCountry(Countries.all.first { it.isoCode == "US" }))
+
+        assertThat(viewModel.state.value.nationalNumber).isEqualTo("883506439")
+        assertThat(viewModel.state.value.phoneValid).isFalse()
+    }
+
+    @Test
+    fun `the form is restored from saved state after process death`() = runTest {
+        createViewModel().fillForm()
+
+        val restored = createViewModel().state.value
+
+        assertThat(restored.mode).isEqualTo(AuthMode.REGISTER)
+        assertThat(restored.country.isoCode).isEqualTo("PL")
+        assertThat(restored.nationalNumber).isEqualTo("883506439")
+        assertThat(restored.phoneValid).isTrue()
+        assertThat(restored.username).isEqualTo("tester")
+    }
+
+    @Test
+    fun `switching mode keeps the username and clears the error`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.fillForm()
+        viewModel.sendCode(Result.failure(Exception()))
+
+        viewModel.dispatch(AuthIntent.SelectMode(AuthMode.LOGIN))
+        viewModel.dispatch(AuthIntent.SelectMode(AuthMode.REGISTER))
+
+        assertThat(viewModel.state.value.username).isEqualTo("tester")
+        assertThat(viewModel.state.value.error).isNull()
+    }
+
+    @Test
+    fun `logout clears the saved form`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.fillForm()
+
+        viewModel.dispatch(AuthIntent.Logout)
+
+        assertThat(savedStateHandle.get<String>("auth_national_number")).isNull()
+        assertThat(createViewModel().state.value.nationalNumber).isEqualTo("")
+    }
+
+    @Test
     fun `account deleted elsewhere logs out and shows the account-deleted error`() = runTest {
         every { authService.isAuthenticated() } returns true
         authRepository.authState.value = DomainUser(id = "me")
@@ -180,6 +284,23 @@ class AuthViewModelTest {
         assertThat(authRepository.loggedOut).isTrue()
         assertThat(viewModel.state.value.errorId()).isEqualTo(R.string.auth_error_account_deleted)
         verify { presenceManager.disconnect(any()) }
+    }
+
+    @Test
+    fun `a session that ends after the code was sent returns to the first step`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.sendCode(Result.success(VerificationResult.CodeSent("vid")))
+        viewModel.dispatch(AuthIntent.ChangeOtp("123456"))
+        every { authService.isAuthenticated() } returns true
+
+        authRepository.authState.value = DomainUser(id = "me")
+        userRepository.remoteUsers.value = RemoteUserSnapshot(user = null, authoritative = true)
+
+        assertThat(authRepository.loggedOut).isTrue()
+        assertThat(viewModel.state.value.errorId()).isEqualTo(R.string.auth_error_account_not_found)
+        assertThat(viewModel.state.value.codeSent).isFalse()
+        assertThat(viewModel.state.value.verificationId).isNull()
+        assertThat(viewModel.state.value.otp).isEqualTo("")
     }
 
     @Test

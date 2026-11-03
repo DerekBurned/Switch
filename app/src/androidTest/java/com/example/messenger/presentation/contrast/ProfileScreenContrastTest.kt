@@ -5,9 +5,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.messenger.domain.model.PhoneNumber
 import com.example.messenger.domain.model.User
 import com.example.messenger.presentation.components.profile.MediaTabsRow
+import com.example.messenger.presentation.components.profile.ProfileHeader
 import com.example.messenger.presentation.components.profile.ProfileInfoCard
 import com.example.messenger.presentation.screens.chatuserprofile.ChatUserProfileUiState
 import com.example.messenger.presentation.screens.chatuserprofile.MediaTab
+import com.example.messenger.presentation.screens.editcontactdata.EditContactDataScreenContent
+import com.example.messenger.presentation.screens.editcontactdata.EditContactDataUiState
 import com.example.messenger.presentation.screens.editprofile.EditProfileScreenContent
 import com.example.messenger.presentation.screens.editprofile.EditProfileUiState
 import com.example.messenger.presentation.screens.profile.ProfileScreenContent
@@ -61,6 +64,31 @@ class ProfileScreenContrastTest {
         texts = setOf("Video", "File"),
     ) {
         MediaTabsRow(active = MediaTab.PHOTO, onChange = {})
+    }
+
+    @Test
+    fun chatUserProfileHeaderLastSeen() = compose.assertReadableInBothThemes(
+        component = "ProfileHeader",
+        texts = setOf("Alice Johnson", "last seen recently"),
+    ) {
+        ProfileHeader(
+            state = ChatUserProfileUiState(
+                user = profileUser,
+                displayName = "Alice Johnson",
+                lastSeen = "last seen recently",
+            ),
+            onCallClick = { _, _, _ -> },
+        )
+    }
+
+    @Test
+    fun editContactDataUsername() = compose.assertReadableInBothThemes(
+        component = "EditContactDataScreenContent",
+        texts = setOf("@alice"),
+    ) {
+        EditContactDataScreenContent(
+            state = EditContactDataUiState(username = "alice", name = "Alice", initialName = "Alice"),
+        )
     }
 
     @Test

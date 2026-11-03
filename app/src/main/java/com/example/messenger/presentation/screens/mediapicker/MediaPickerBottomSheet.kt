@@ -46,6 +46,7 @@ import com.example.messenger.presentation.components.media.CameraPreviewCell
 import com.example.messenger.presentation.featureflag.featureEnabled
 import com.example.messenger.presentation.theme.LightGray
 import com.example.messenger.presentation.theme.PrimaryBlue
+import com.example.messenger.presentation.theme.TextOnFieldMuted
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,7 +118,7 @@ fun MediaPickerBottomSheet(
                         ) {
                             Text(
                                 text = filter.label(),
-                                color = if (isActive) Color.White else Color.Gray,
+                                color = if (isActive) Color.White else TextOnFieldMuted,
                                 fontSize = 13.sp,
                             )
                         }

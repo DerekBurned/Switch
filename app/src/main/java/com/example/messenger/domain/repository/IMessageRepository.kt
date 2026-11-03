@@ -16,4 +16,10 @@ interface IMessageRepository {
     suspend fun loadOlderMessages(conversationId: String, limit: Long = 100): Result<Int>
 
     suspend fun backfillRecentMessages(conversationId: String, limit: Long = 30): Result<Int>
+
+    suspend fun fetchSharedMediaPage(
+        conversationId: String,
+        beforeMessageId: String?,
+        limit: Long = 60,
+    ): Result<List<Message>>
 }

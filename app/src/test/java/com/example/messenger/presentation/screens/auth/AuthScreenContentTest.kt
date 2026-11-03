@@ -1,7 +1,13 @@
 package com.example.messenger.presentation.screens.auth
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import assertk.assertThat
@@ -22,6 +28,9 @@ class AuthScreenContentTest {
 
     private var sendClicks = 0
     private var verifyClicks = 0
+    private var changeNumberClicks = 0
+    private val phoneField =
+        SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText) and hasText("2025550123")
 
     private fun render(
         mode: AuthMode = AuthMode.LOGIN,
@@ -30,6 +39,7 @@ class AuthScreenContentTest {
         otp: String = "",
         error: String? = null,
         codeSent: Boolean = false,
+        phoneValid: Boolean = nationalNumber.isNotEmpty(),
     ) {
         compose.setContent {
             MessengerTheme {
@@ -49,6 +59,8 @@ class AuthScreenContentTest {
                     onOtpChange = {},
                     onSendOtp = { sendClicks++ },
                     onVerifyOtp = { verifyClicks++ },
+                    phoneValid = phoneValid,
+                    onChangeNumber = { changeNumberClicks++ },
                 )
             }
         }
@@ -86,6 +98,61 @@ class AuthScreenContentTest {
         render(nationalNumber = "")
 
         compose.onNodeWithText("Log in").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `an invalid phone number disables Log in`() {
+        render(nationalNumber = "202555", phoneValid = false)
+
+        compose.onNodeWithText("Log in").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `the phone field is editable before the code is sent`() {
+        render()
+
+        compose.onNode(phoneField).assertIsEnabled()
+    }
+
+    @Test
+    fun `tapping the phone field after the username field focuses the phone field`() {
+        render(mode = AuthMode.REGISTER, username = "tester")
+
+        compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText) and hasText("tester"))
+            .performClick()
+        compose.onNode(phoneField).performClick()
+
+        compose.onNode(phoneField).assertIsFocused()
+    }
+
+    @Test
+    fun `after the code is sent, the phone field is locked`() {
+        render(codeSent = true)
+
+        compose.onNode(phoneField).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `the country picker is tappable before the code is sent`() {
+        render()
+
+        compose.onNodeWithContentDescription("Choose country").assertIsEnabled()
+    }
+
+    @Test
+    fun `after the code is sent, the country picker is locked`() {
+        render(codeSent = true)
+
+        compose.onNodeWithContentDescription("Choose country").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `after the code is sent, Change number calls onChangeNumber`() {
+        render(codeSent = true)
+
+        compose.onNodeWithText("Change number").performClick()
+
+        assertThat(changeNumberClicks).isEqualTo(1)
     }
 
     @Test

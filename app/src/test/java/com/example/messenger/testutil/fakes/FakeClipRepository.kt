@@ -11,6 +11,11 @@ class FakeClipRepository : IClipRepository {
 
     val remoteDeleted = mutableListOf<String>()
     val deletedIds = MutableStateFlow<Set<String>>(emptySet())
+    val registeredRemote = mutableListOf<Message.Clip>()
+
+    override fun registerRemoteClip(message: Message.Clip) {
+        registeredRemote += message
+    }
 
     override fun sendClip(conversationId: String, source: File, clip: Clip, replyTo: Message?) = Unit
 

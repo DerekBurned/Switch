@@ -15,6 +15,8 @@
     <string name="auth_error_app_not_verified">This build is not verified with Firebase. Register its signing certificate in the Firebase console.</string>
     <string name="auth_error_account_not_found">This account no longer exists. Register to continue.</string>
     <string name="auth_error_account_deleted">This account has been deleted. Register to continue.</string>
+    <string name="auth_error_number_registered">An account with this number already exists. Log in to continue.</string>
+    <string name="auth_error_number_not_registered">No account uses this number yet. Register to continue.</string>
 
     <!-- Delete account -->
     <string name="delete_account_error_confirm">Type DELETE to confirm</string>
@@ -142,6 +144,16 @@
     <string name="voice_cancel_send">Cancel sending voice message</string>
     <string name="voice_retry_send">Retry sending voice message</string>
     <string name="voice_play_failed">Voice message failed to play. Tap to retry</string>
+    <string name="profile_media_tab_photos">Photos</string>
+    <string name="profile_media_tab_videos">Videos</string>
+    <string name="profile_media_tab_voice">Voice</string>
+    <string name="profile_media_tab_files">Files</string>
+    <string name="profile_media_empty_photos">No photos yet</string>
+    <string name="profile_media_empty_videos">No videos yet</string>
+    <string name="profile_media_empty_voice">No voice messages yet</string>
+    <string name="profile_media_empty_files">No files yet</string>
+    <string name="profile_media_you">You</string>
+    <string name="profile_media_voice_meta">%1$s · %2$s</string>
     <string name="voice_slide_up_to_lock">Slide up to lock</string>
     <string name="voice_mode_hint">Hold to record a voice message. Tap to switch to video</string>
     <string name="video_mode_hint">Hold to record a video message. Tap to switch to voice</string>

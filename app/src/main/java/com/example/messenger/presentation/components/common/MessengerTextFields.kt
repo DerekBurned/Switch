@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.messenger.presentation.theme.Dimens
@@ -66,7 +67,7 @@ fun MessengerSearchField(
             if (value.isEmpty()) {
                 Text(
                     text = placeholder,
-                    color = tokens.textPrimary.copy(alpha = 0.6f),
+                    color = tokens.textMuted,
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -117,8 +118,10 @@ fun MessengerInputField(
         if (value.isEmpty()) {
             Text(
                 text = placeholder,
-                color = tokens.textMuted,
+                color = tokens.textOnFieldMuted,
                 style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         BasicTextField(
@@ -159,8 +162,10 @@ fun OtpCodeField(
             if (value.isEmpty()) {
                 Text(
                     text = placeholder,
-                    color = tokens.textMuted,
+                    color = tokens.textOnFieldMuted,
                     style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             BasicTextField(
@@ -188,7 +193,7 @@ fun OtpCodeField(
             CircularProgressIndicator(
                 progress = ringProgress,
                 color = tokens.accent,
-                trackColor = tokens.textMuted.copy(alpha = 0.25f),
+                trackColor = tokens.textOnFieldMuted.copy(alpha = 0.25f),
                 strokeWidth = 2.dp,
                 modifier = Modifier.size(22.dp),
             )

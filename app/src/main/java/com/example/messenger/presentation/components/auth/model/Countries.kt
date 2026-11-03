@@ -192,7 +192,7 @@ object Countries {
         Country("🇺🇾", "Uruguay", "UY", "+598"),
         Country("🇺🇿", "Uzbekistan", "UZ", "+998"),
         Country("🇻🇺", "Vanuatu", "VU", "+678"),
-        Country("🇻🇦", "Vatican City", "VA", "+379"),
+        Country("🇻🇦", "Vatican City", "VA", "+39"),
         Country("🇻🇪", "Venezuela", "VE", "+58"),
         Country("🇻🇳", "Vietnam", "VN", "+84"),
         Country("🇾🇪", "Yemen", "YE", "+967"),

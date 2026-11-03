@@ -48,6 +48,7 @@ datastore = "1.1.7"
 
 # E2EE crypto primitives
 tink = "1.19.0"
+libphonenumber = "9.0.38"
 
 # Testing
 junitJupiter = "5.11.4"
@@ -119,6 +120,7 @@ google-gson = { group = "com.google.code.gson", name = "gson", version = "2.14.0
 
 # Tink (X25519 + HKDF for E2EE conversation keys)
 tink-android = { group = "com.google.crypto.tink", name = "tink-android", version.ref = "tink" }
+libphonenumber = { group = "com.googlecode.libphonenumber", name = "libphonenumber", version.ref = "libphonenumber" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
 androidx-compose-runtime-saveable = { group = "androidx.compose.runtime", name = "runtime-saveable" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version = "1.0.1" }

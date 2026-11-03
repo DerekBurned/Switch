@@ -9,16 +9,25 @@ class FakeMediaRepository : IMediaRepository {
 
     override val transfers = MutableStateFlow<Map<String, MediaTransfer>>(emptyMap())
     val sentMedia = mutableListOf<Triple<String, List<String>, String>>()
+    val downloaded = mutableListOf<MediaItem>()
+    val cancelledDownloads = mutableListOf<String>()
+    val cancelledUploads = mutableListOf<Pair<String, String>>()
 
     override fun sendMediaMessage(conversationId: String, uris: List<String>, caption: String) {
         sentMedia += Triple(conversationId, uris, caption)
     }
 
-    override fun downloadMedia(item: MediaItem) = Unit
+    override fun downloadMedia(item: MediaItem) {
+        downloaded += item
+    }
 
-    override fun cancelUpload(messageId: String, itemId: String) = Unit
+    override fun cancelUpload(messageId: String, itemId: String) {
+        cancelledUploads += messageId to itemId
+    }
 
-    override fun cancelDownload(itemId: String) = Unit
+    override fun cancelDownload(itemId: String) {
+        cancelledDownloads += itemId
+    }
 
     override fun retry(messageId: String) = Unit
 }

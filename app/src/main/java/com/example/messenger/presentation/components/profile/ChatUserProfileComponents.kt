@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,8 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -91,7 +90,7 @@ fun ProfileHeader(
                 state.isOnline -> "online"
                 else -> state.lastSeen.ifBlank { "offline" }
             },
-            color = if (state.isOnline) tokens.callAccept else tokens.textPrimary.copy(alpha = 0.6f),
+            color = if (state.isOnline) tokens.callAccept else tokens.textMuted,
             fontSize = 13.sp,
         )
         Spacer(Modifier.height(18.dp))
@@ -204,7 +203,7 @@ fun MediaTabsRow(active: MediaTab, onChange: (MediaTab) -> Unit) {
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = tab.name.lowercase().replaceFirstChar { it.uppercase() },
+                    text = stringResource(tab.labelRes()),
                     color = if (isActive) tokens.onAccent else tokens.textMuted,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
@@ -213,29 +212,6 @@ fun MediaTabsRow(active: MediaTab, onChange: (MediaTab) -> Unit) {
         }
     }
     Spacer(Modifier.height(10.dp))
-}
-
-@Composable
-fun ProfileMediaGrid() {
-    val tokens = messengerTokens
-    val cellColor = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.06f)
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        repeat(2) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                repeat(4) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(cellColor),
-                    )
-                }
-            }
-            Spacer(Modifier.height(4.dp))
-        }
-    }
-    Spacer(Modifier.height(24.dp))
 }
 
 @Preview
@@ -256,7 +232,6 @@ private fun ChatUserProfileComponentsPreview() {
                 ProfileHeader(state = state, onCallClick = { _, _, _ -> })
                 ProfileInfoCard(state = state)
                 MediaTabsRow(active = MediaTab.entries.first(), onChange = {})
-                ProfileMediaGrid()
             }
         }
     }

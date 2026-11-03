@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.example.messenger.presentation.components.list.ForwardConversationRow
 import com.example.messenger.presentation.theme.LightGray
 import com.example.messenger.presentation.theme.PrimaryBlue
+import com.example.messenger.presentation.theme.messengerTokens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,7 +119,7 @@ internal fun ForwardMessageBottomSheetContent(
                         ) {
                             Text(
                                 text = if (state.isLoading) "Loading..." else "No conversations",
-                                color = Color.Gray,
+                                color = messengerTokens.textMuted,
                                 fontSize = 14.sp,
                             )
                         }

@@ -2,6 +2,7 @@ package com.example.messenger.presentation.screens.auth
 
 import android.app.Activity
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.messenger.R
 import com.example.messenger.data.presence.PresenceManager
@@ -9,6 +10,7 @@ import com.example.messenger.data.remote.auth.FirebaseAuthService
 import com.example.messenger.data.remote.firebase.FirebaseMessagingManager
 import com.example.messenger.data.remote.firebase.FirestoreService
 import com.example.messenger.data.sync.SyncCoordinator
+import com.example.messenger.domain.model.AuthAccountException
 import com.example.messenger.domain.model.SessionEndReason
 import com.example.messenger.domain.model.SessionState
 import com.example.messenger.domain.usecase.auth.LinkPhoneUseCase
@@ -20,6 +22,10 @@ import com.example.messenger.presentation.base.UiText
 import com.example.messenger.presentation.base.mvi.MviViewModel
 import com.example.messenger.presentation.base.toPhoneAuthUiText
 import com.example.messenger.presentation.base.toUiText
+import com.example.messenger.presentation.components.auth.PhoneNumberRules
+import com.example.messenger.presentation.components.auth.model.AuthMode
+import com.example.messenger.presentation.components.auth.model.Countries
+import com.example.messenger.presentation.components.auth.model.Country
 import com.example.messenger.util.Resource
 import com.example.messenger.util.VerificationResult
 import com.google.firebase.auth.PhoneAuthCredential
@@ -39,16 +45,22 @@ class AuthViewModel @Inject constructor(
     private val firestoreService: FirestoreService,
     private val syncCoordinator: SyncCoordinator,
     private val backfillRecentHistoryUseCase: BackfillRecentHistoryUseCase,
+    private val savedStateHandle: SavedStateHandle,
 ) : MviViewModel<AuthUiState, AuthIntent, AuthEffect>(
-    initialState = AuthUiState(
-        session = if (firebaseAuthService.isAuthenticated()) {
-            SessionState.Resolving
-        } else {
-            SessionState.SignedOut()
-        },
+    initialState = restoreForm(
+        savedStateHandle,
+        AuthUiState(
+            session = if (firebaseAuthService.isAuthenticated()) {
+                SessionState.Resolving
+            } else {
+                SessionState.SignedOut()
+            },
+        ),
     ),
 ) {
-    
+
+    private val phoneRules = PhoneNumberRules()
+
     private var pendingUsername: String? = null
 
     private var pendingIsRegister: Boolean = false
@@ -61,6 +73,17 @@ class AuthViewModel @Inject constructor(
     override fun handleIntent(intent: AuthIntent) {
         Log.d(TAG, "handleIntent: ${intent::class.simpleName}")
         when (intent) {
+            is AuthIntent.SelectMode -> {
+                savedStateHandle[KEY_MODE] = intent.mode.name
+                setState { copy(mode = intent.mode, error = null) }
+            }
+            is AuthIntent.SelectCountry -> updatePhone(intent.country, currentState.nationalNumber)
+            is AuthIntent.ChangeNationalNumber -> updatePhone(currentState.country, intent.input)
+            is AuthIntent.ChangeUsername -> {
+                savedStateHandle[KEY_USERNAME] = intent.username
+                setState { copy(username = intent.username) }
+            }
+            is AuthIntent.ChangeOtp -> setState { copy(otp = intent.otp) }
             is AuthIntent.SendVerificationCode ->
                 sendVerificationCode(intent.activity, intent.phoneNumber, intent.username, intent.isRegister)
             is AuthIntent.ResendCode -> resendCode(intent.activity, intent.phoneNumber)
@@ -68,7 +91,20 @@ class AuthViewModel @Inject constructor(
             is AuthIntent.VerifyOtpAndLink -> verifyOtpAndLink(intent.otpCode)
             AuthIntent.Logout -> logout()
             AuthIntent.ClearError -> setState { copy(error = null) }
-            AuthIntent.EditPhoneNumber -> setState { copy(codeSent = false, error = null) }
+            AuthIntent.EditPhoneNumber -> setState { copy(codeSent = false, error = null, otp = "") }
+        }
+    }
+
+    private fun updatePhone(country: Country, input: String) {
+        val number = phoneRules.sanitize(country, input)
+        savedStateHandle[KEY_ISO] = country.isoCode
+        savedStateHandle[KEY_NUMBER] = number
+        setState {
+            copy(
+                country = country,
+                nationalNumber = number,
+                phoneValid = phoneRules.isValid(country, number),
+            )
         }
     }
 
@@ -86,7 +122,15 @@ class AuthViewModel @Inject constructor(
         Log.w(TAG, "endInvalidSession: $reason")
         presenceManager.disconnect(viewModelScope)
         logoutUseCase()
-        setState { copy(isLoading = false, error = reason.toUiText()) }
+        setState {
+            copy(
+                isLoading = false,
+                codeSent = false,
+                verificationId = null,
+                otp = "",
+                error = reason.toUiText(),
+            )
+        }
     }
 
     private fun SessionEndReason.toUiText(): UiText = when (this) {
@@ -102,6 +146,7 @@ class AuthViewModel @Inject constructor(
             syncCoordinator.stop()
             presenceManager.disconnect(viewModelScope)
             logoutUseCase()
+            listOf(KEY_MODE, KEY_ISO, KEY_NUMBER, KEY_USERNAME).forEach { savedStateHandle.remove<String>(it) }
             setState { AuthUiState() }
         }
     }
@@ -236,9 +281,31 @@ class AuthViewModel @Inject constructor(
                     Log.e(TAG, "signInWithPhone: ERROR ${result.message}")
                     setState { copy(isLoading = false, error = result.message.toUiText()) }
                 }
-                is Resource.Failure -> {
-                    Log.e(TAG, "signInWithPhone: FAILURE", result.exception)
-                    setState { copy(isLoading = false, error = result.exception.message?.toUiText()) }
+                is Resource.Failure -> when (val exception = result.exception) {
+                    is AuthAccountException -> {
+                        Log.w(TAG, "signInWithPhone: account mismatch ${exception::class.simpleName}")
+                        val (message, mode) = when (exception) {
+                            is AuthAccountException.AlreadyRegistered ->
+                                R.string.auth_error_number_registered to AuthMode.LOGIN
+                            is AuthAccountException.NotRegistered ->
+                                R.string.auth_error_number_not_registered to AuthMode.REGISTER
+                        }
+                        savedStateHandle[KEY_MODE] = mode.name
+                        setState {
+                            copy(
+                                isLoading = false,
+                                codeSent = false,
+                                verificationId = null,
+                                otp = "",
+                                mode = mode,
+                                error = UiText.StringResource(message),
+                            )
+                        }
+                    }
+                    else -> {
+                        Log.e(TAG, "signInWithPhone: FAILURE", exception)
+                        setState { copy(isLoading = false, error = exception.message?.toUiText()) }
+                    }
                 }
                 is Resource.Loading -> {}
             }
@@ -269,6 +336,28 @@ class AuthViewModel @Inject constructor(
 
     private companion object {
         const val TAG = "AUTHFLOW_VM"
+        const val KEY_MODE = "auth_mode"
+        const val KEY_ISO = "auth_country_iso"
+        const val KEY_NUMBER = "auth_national_number"
+        const val KEY_USERNAME = "auth_username"
+
+        fun restoreForm(handle: SavedStateHandle, base: AuthUiState): AuthUiState {
+            val rules = PhoneNumberRules()
+            val mode = handle.get<String>(KEY_MODE)
+                ?.let { name -> AuthMode.entries.firstOrNull { it.name == name } }
+                ?: base.mode
+            val country = handle.get<String>(KEY_ISO)
+                ?.let { iso -> Countries.all.firstOrNull { it.isoCode == iso } }
+                ?: base.country
+            val number = rules.sanitize(country, handle.get<String>(KEY_NUMBER).orEmpty())
+            return base.copy(
+                mode = mode,
+                country = country,
+                nationalNumber = number,
+                phoneValid = rules.isValid(country, number),
+                username = handle.get<String>(KEY_USERNAME).orEmpty(),
+            )
+        }
     }
 
     private fun linkPhone(credential: PhoneAuthCredential) {

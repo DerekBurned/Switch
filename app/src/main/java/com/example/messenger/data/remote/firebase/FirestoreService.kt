@@ -335,6 +335,39 @@ class FirestoreService @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun fetchMessagesOfTypes(
+        conversationId: String,
+        types: List<String>,
+        beforeMessageId: String?,
+        limit: Long,
+        cutoff: Long = 0,
+    ): Result<List<Message>> {
+        return try {
+            val messagesCollection = conversationsCollection
+                .document(conversationId)
+                .collection("messages")
+            var query = messagesCollection
+                .whereIn("type", types)
+                .whereGreaterThan("timestamp", cutoff)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+            if (beforeMessageId != null) {
+                val anchor = messagesCollection.document(beforeMessageId).get().await()
+                if (!anchor.exists()) return Result.success(emptyList())
+                query = query.startAfter(anchor)
+            }
+            val snapshot = query.limit(limit).get().await()
+            val messages = snapshot.documents.mapNotNull { doc ->
+                doc.toObject(RemoteMessageDto::class.java)?.copy(id = doc.id, conversationId = conversationId)
+            }.map { dto -> applyDeletedFor(dto, codec.decode(dto)) }
+            Result.success(messages)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e("FirestoreService", "Error fetching messages of types $types", e)
+            Result.failure(e)
+        }
+    }
     suspend fun getMessageOnce(conversationId: String, messageId: String): Result<RemoteMessageDto> {
         return try {
             val doc = conversationsCollection.document(conversationId)

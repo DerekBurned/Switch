@@ -5,6 +5,7 @@ import com.example.messenger.data.crypto.E2eeBootstrap
 import com.example.messenger.data.remote.auth.AccountDeletionService
 import com.example.messenger.data.remote.auth.FirebaseAuthService
 import com.example.messenger.data.remote.firebase.FirestoreService
+import com.example.messenger.domain.model.AuthAccountException
 import com.example.messenger.domain.model.DomainUser
 import com.example.messenger.domain.model.User
 import com.example.messenger.domain.repository.IAuthRepository
@@ -54,7 +55,7 @@ class AuthRepositoryImpl @Inject constructor(
                 if (isRegistration) {
                     Log.w(TAG, "loginWithPhone: REGISTER for an already-registered number — rejecting")
                     auth.logout()
-                    return Resource.Error("An account with this number already exists. Please log in instead.")
+                    return Resource.Failure(AuthAccountException.AlreadyRegistered())
                 }
                 Log.d(TAG, "loginWithPhone: LOGIN existing user ${existing.id}")
                 if (existing.usernameLower.isNullOrBlank() && !existing.username.isNullOrBlank()) {
@@ -72,8 +73,11 @@ class AuthRepositoryImpl @Inject constructor(
             if (!isRegistration) {
                 Log.w(TAG, "loginWithPhone: LOGIN for unregistered phone — rejecting and deleting orphan auth user")
                 auth.deleteAccount()
-                    .onFailure { Log.e(TAG, "loginWithPhone: failed to delete orphan auth user", it) }
-                return Resource.Error("User does not exist. Please register first.")
+                    .onFailure {
+                        Log.e(TAG, "loginWithPhone: failed to delete orphan auth user", it)
+                        auth.logout()
+                    }
+                return Resource.Failure(AuthAccountException.NotRegistered())
             }
 
             val resolvedUsername = username?.trim()?.takeIf { it.isNotBlank() }

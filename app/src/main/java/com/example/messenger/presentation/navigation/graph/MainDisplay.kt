@@ -432,6 +432,7 @@ internal fun MainDisplay(
                                         "userId" to key.userId,
                                         "avatarUrl" to (key.avatarUrl ?: ""),
                                         "partnerName" to key.partnerName,
+                                        "conversationId" to (key.conversationId ?: ""),
                                     ) {
                                         ProvideNavAnimatedScope {
                                             ChatUserProfileScreen(
@@ -491,7 +492,8 @@ internal fun MainDisplay(
                                                             ChatUserProfileRoute(
                                                                 key.partnerId,
                                                                 avatarUrl,
-                                                                partnerName
+                                                                partnerName,
+                                                                key.conversationId,
                                                             )
                                                         )
                                                     }

@@ -203,7 +203,7 @@ private fun MediaGrid(
 }
 
 @Composable
-private fun MediaCell(
+internal fun MediaCell(
     item: MediaItem,
     transfer: MediaTransfer?,
     isSent: Boolean,

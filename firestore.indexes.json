@@ -15,6 +15,14 @@
         { "fieldPath": "visibleTo", "arrayConfig": "CONTAINS" },
         { "fieldPath": "lastMessageTimestamp", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

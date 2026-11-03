@@ -267,7 +267,7 @@
         },
         "partner_profile_shared_media": {
           "defaultValue": { "useInAppDefault": true },
-          "description": "Shared media tabs. Not built yet: off in release builds unless you publish true.",
+          "description": "Off: hides the Photos, Videos, Voice and Files tabs on the chat profile.",
           "valueType": "BOOLEAN"
         }
       }

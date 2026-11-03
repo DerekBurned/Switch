@@ -45,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
@@ -156,7 +155,7 @@ internal fun MessageComposer(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Cancel reply",
-                        tint = Color.Gray,
+                        tint = tokens.textOnFieldMuted,
                         modifier = Modifier.size(16.dp),
                     )
                 }
@@ -238,7 +237,7 @@ internal fun MessageComposer(
                     if (messageText.isEmpty()) {
                         Text(
                             text = "Message",
-                            color = tokens.textOnField.copy(alpha = 0.45f),
+                            color = tokens.textOnFieldMuted,
                             style = MaterialTheme.typography.bodyLarge,
                         )
                     }
@@ -372,7 +371,7 @@ private fun DeletedPartnerNotice(modifier: Modifier = Modifier) {
     ) {
         Text(
             text = "This account no longer exists. You can read this conversation, but not reply.",
-            color = tokens.textMuted,
+            color = tokens.textOnFieldMuted,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )

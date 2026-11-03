@@ -8,11 +8,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -60,9 +63,11 @@ internal fun AuthScreenContent(
     onSendOtp: () -> Unit,
     onVerifyOtp: () -> Unit,
     onResendCode: () -> Unit = {},
+    phoneValid: Boolean = false,
+    onChangeNumber: () -> Unit = {},
 ) {
     val tokens = messengerTokens
-    val sendEnabled = !isLoading && nationalNumber.isNotBlank() &&
+    val sendEnabled = !isLoading && phoneValid &&
         (mode == AuthMode.LOGIN || username.isNotBlank())
     val buttonEnabled = if (codeSent) !isLoading && otp.isNotBlank() else sendEnabled
 
@@ -121,20 +126,26 @@ internal fun AuthScreenContent(
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CountryCodePicker(
                 selected = selectedCountry,
                 onCountrySelected = onCountryChange,
+                enabled = !codeSent,
+                modifier = Modifier.fillMaxHeight(),
             )
-            Box(modifier = Modifier.weight(1f)) {
+            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 MessengerInputField(
                     value = nationalNumber,
                     onValueChange = onNationalNumberChange,
                     placeholder = "Enter phone number",
+                    enabled = !codeSent,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxHeight(),
                 )
             }
         }
@@ -168,11 +179,25 @@ internal fun AuthScreenContent(
                     onRetry = onResendCode,
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = "Code sent to ${selectedCountry.dialCode} $nationalNumber",
-                    color = tokens.textPrimary.copy(alpha = 0.6f),
-                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Code sent to ${selectedCountry.dialCode} $nationalNumber",
+                        color = tokens.textMuted,
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        text = "Change number",
+                        color = tokens.accent,
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .clickable(enabled = !isLoading, onClick = onChangeNumber)
+                            .padding(vertical = 4.dp),
+                    )
+                }
             }
         }
 

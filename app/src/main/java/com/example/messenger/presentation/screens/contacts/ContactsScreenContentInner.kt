@@ -32,6 +32,7 @@ import com.example.messenger.presentation.theme.MessengerTheme
 import com.example.messenger.presentation.theme.OnSurface
 import com.example.messenger.presentation.theme.OnSurfaceMuted
 import com.example.messenger.presentation.theme.PrimaryBlue
+import com.example.messenger.presentation.theme.messengerTokens
 
 @Composable
 internal fun ContactsScreenContentInner(
@@ -80,7 +81,7 @@ internal fun ContactsScreenContentInner(
                         } else {
                             "No contacts found"
                         },
-                        color = Color.Gray,
+                        color = messengerTokens.textMuted,
                     )
                 }
             }

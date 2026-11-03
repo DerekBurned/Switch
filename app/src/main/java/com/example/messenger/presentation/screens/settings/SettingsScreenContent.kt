@@ -259,7 +259,7 @@ fun SettingsScreenContent(
 
         Text(
             text = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-            color = tokens.textMuted.copy(alpha = 0.6f),
+            color = tokens.textMuted,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier

@@ -153,7 +153,7 @@ private fun BoxScope.CenterMessage(text: String) {
     val tokens = messengerTokens
     Text(
         text = text,
-        color = tokens.textPrimary.copy(alpha = 0.6f),
+        color = tokens.textMuted,
         modifier = Modifier.align(Alignment.Center).padding(16.dp),
     )
 }
@@ -181,7 +181,7 @@ private fun SearchResultRow(user: User, onClick: () -> Unit) {
             if (!secondary.isNullOrBlank()) {
                 Text(
                     text = secondary,
-                    color = tokens.textPrimary.copy(alpha = 0.6f),
+                    color = tokens.textMuted,
                     fontSize = 13.sp,
                 )
             }

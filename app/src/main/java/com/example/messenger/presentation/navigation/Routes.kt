@@ -64,6 +64,7 @@ data class ChatUserProfileRoute(
     val userId: String,
     val avatarUrl: String? = null,
     val partnerName: String = "",
+    val conversationId: String? = null,
 ) : NavKey
 
 @Serializable

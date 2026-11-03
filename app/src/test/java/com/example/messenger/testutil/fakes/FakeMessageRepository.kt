@@ -60,4 +60,16 @@ class FakeMessageRepository : IMessageRepository {
         backfilled += conversationId to limit
         return backfillResult(conversationId)
     }
+
+    val sharedMediaRequests = mutableListOf<Pair<String, String?>>()
+    var sharedMediaPage: suspend (beforeMessageId: String?) -> Result<List<Message>> = { Result.success(emptyList()) }
+
+    override suspend fun fetchSharedMediaPage(
+        conversationId: String,
+        beforeMessageId: String?,
+        limit: Long,
+    ): Result<List<Message>> {
+        sharedMediaRequests += conversationId to beforeMessageId
+        return sharedMediaPage(beforeMessageId)
+    }
 }

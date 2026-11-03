@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Forward
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -25,6 +26,8 @@ import com.example.messenger.presentation.components.chat.ScrollToBottomButton
 import com.example.messenger.presentation.components.chat.UnreadMessagesDivider
 import com.example.messenger.presentation.components.chat.VoiceDraftBar
 import com.example.messenger.presentation.components.chat.model.MessageAction
+import com.example.messenger.presentation.screens.chat.ChatUiState
+import com.example.messenger.presentation.screens.chat.MessageComposer
 import com.example.messenger.presentation.screens.chat.VideoNoteBubble
 import com.example.messenger.presentation.screens.chat.VoiceBubble
 import org.junit.Rule
@@ -246,6 +249,40 @@ class ChatComponentContrastTest {
             videoFrame = { null },
             onAttachVideo = {},
             onDetachVideo = {},
+        )
+    }
+
+    @Test
+    fun messageComposerPlaceholder() = compose.assertReadableInBothThemes(
+        component = "MessageComposer",
+        texts = setOf("Message"),
+    ) {
+        Composer(ChatUiState())
+    }
+
+    @Test
+    fun messageComposerDeletedPartner() = compose.assertReadableInBothThemes("MessageComposer deleted partner") {
+        Composer(ChatUiState(partnerDeleted = true))
+    }
+
+    @Composable
+    private fun Composer(uiState: ChatUiState) {
+        MessageComposer(
+            messageText = "",
+            uiState = uiState,
+            onMessageTextChange = {},
+            onSendClick = {},
+            onAttachmentClick = {},
+            onClearAttachments = {},
+            onClearReply = {},
+            onHeightChanged = {},
+            onStartRecording = {},
+            onLockRecording = {},
+            onCancelRecording = {},
+            onFinishRecording = {},
+            onInterruptRecording = {},
+            onSendVoiceDraft = {},
+            onDiscardVoiceDraft = {},
         )
     }
 }

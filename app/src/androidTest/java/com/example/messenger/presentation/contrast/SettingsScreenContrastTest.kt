@@ -2,7 +2,9 @@ package com.example.messenger.presentation.contrast
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.messenger.BuildConfig
 import com.example.messenger.presentation.components.common.RoundedCard
+import com.example.messenger.presentation.screens.settings.SettingsScreenContent
 import com.example.messenger.presentation.screens.settings.datastorage.DataStorageScreen
 import com.example.messenger.presentation.screens.settings.language.LanguageRow
 import org.junit.Rule
@@ -29,5 +31,13 @@ class SettingsScreenContrastTest {
         texts = setOf("Storage", "5 GB of 128 GB"),
     ) {
         DataStorageScreen(onBack = {})
+    }
+
+    @Test
+    fun settingsVersionLine() = compose.assertReadableInBothThemes(
+        component = "SettingsScreenContent",
+        texts = setOf("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"),
+    ) {
+        SettingsScreenContent(user = null)
     }
 }

@@ -31,7 +31,6 @@ android {
         "accounts_switch",
         "partner_profile_mute",
         "partner_profile_block",
-        "partner_profile_shared_media",
         "settings_privacy_controls",
         "settings_security",
         "settings_notification_controls",
@@ -192,6 +191,7 @@ dependencies {
 
     // Tink (E2EE crypto primitives)
     implementation(libs.tink.android)
+    implementation(libs.libphonenumber)
 
     //AgoraRTC
     implementation("io.agora.rtc:full-sdk:4.6.3")

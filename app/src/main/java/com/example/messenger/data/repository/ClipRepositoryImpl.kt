@@ -70,6 +70,8 @@ class ClipRepositoryImpl @Inject constructor(
 
     private val purged = ConcurrentHashMap.newKeySet<String>()
 
+    private val remoteClips = ConcurrentHashMap<String, Message.Clip>()
+
     init {
         scope.launch { recoverAfterRestart() }
         scope.launch {
@@ -109,6 +111,10 @@ class ClipRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun registerRemoteClip(message: Message.Clip) {
+        remoteClips[message.id] = message
+    }
+
     override suspend fun ensureLocal(messageId: String): File? = withContext(Dispatchers.IO) {
         val message = loadClip(messageId) ?: return@withContext null
         val outbox = mediaCache.outboxFileFor(messageId, message.clip.fileExtension)
@@ -146,13 +152,12 @@ class ClipRepositoryImpl @Inject constructor(
 
     override suspend fun nextVoiceClip(afterMessageId: String): Message.Clip? = withContext(Dispatchers.IO) {
         val current = loadClip(afterMessageId) ?: return@withContext null
-        val candidates = messageBox.query(
+        val cached = messageBox.query(
             ObxMessage_.conversationId.equal(current.conversationId)
                 .and(ObxMessage_.type.equal(Message.TYPE_VOICE_CLIP))
-                .and(ObxMessage_.deleted.equal(false))
                 .and(ObxMessage_.timestamp.greaterOrEqual(current.timestamp)),
         ).build().use { it.find() }.map { it.toDomain() }
-        nextVoiceClipAfter(current, candidates)
+        nextVoiceClipAfter(current, cached, remoteClips.values)
     }
 
     override fun evictCachedCopy(messageId: String) {
@@ -330,7 +335,8 @@ class ClipRepositoryImpl @Inject constructor(
     private fun findRow(messageId: String): ObxMessage? =
         messageBox.query(ObxMessage_.uid.equal(messageId)).build().use { it.findFirst() }
 
-    private fun loadClip(messageId: String): Message.Clip? = findRow(messageId)?.toDomain() as? Message.Clip
+    private fun loadClip(messageId: String): Message.Clip? =
+        findRow(messageId)?.toDomain() as? Message.Clip ?: remoteClips[messageId]
 
     private fun setStatus(messageId: String, status: MessageStatus) {
         val row = findRow(messageId) ?: return
@@ -373,6 +379,12 @@ internal fun nextVoiceClipAfter(current: Message.Clip, candidates: List<Message>
         .filter { it.clip is Clip.Voice && !it.deleted && it.conversationId == current.conversationId && it.id != current.id }
         .filter { it.timestamp > current.timestamp || (it.timestamp == current.timestamp && it.id > current.id) }
         .minWithOrNull(compareBy<Message.Clip>({ it.timestamp }, { it.id }))
+
+internal fun nextVoiceClipAfter(
+    current: Message.Clip,
+    cached: List<Message>,
+    remote: Collection<Message.Clip>,
+): Message.Clip? = nextVoiceClipAfter(current, (cached + remote).distinctBy { it.id })
 
 internal enum class OutboxFate { KEEP, PROMOTE, DROP }
 

@@ -168,6 +168,18 @@ class MessageRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun fetchSharedMediaPage(
+        conversationId: String,
+        beforeMessageId: String?,
+        limit: Long,
+    ): Result<List<Message>> = firestoreService.fetchMessagesOfTypes(
+        conversationId = conversationId,
+        types = SHARED_MEDIA_TYPES,
+        beforeMessageId = beforeMessageId,
+        limit = limit,
+        cutoff = cutoffFor(conversationId),
+    )
+
     private fun updateMessage(id: String, mutate: (ObxMessage) -> Unit) {
         val existing = messageBox.query(ObxMessage_.uid.equal(id)).build()
             .use { it.findFirst() } ?: return
@@ -231,5 +243,9 @@ class MessageRepositoryImpl @Inject constructor(
         is Message.Media -> copy(status = newStatus)
         is Message.Call  -> copy(status = newStatus)
         is Message.Clip  -> copy(status = newStatus)
+    }
+
+    private companion object {
+        val SHARED_MEDIA_TYPES = listOf(Message.TYPE_MEDIA, Message.TYPE_VOICE_CLIP)
     }
 }

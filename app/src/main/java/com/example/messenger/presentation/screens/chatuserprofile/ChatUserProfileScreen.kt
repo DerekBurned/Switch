@@ -16,6 +16,7 @@ fun ChatUserProfileScreen(
     onEditClick: () -> Unit = {}
     ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val clipPlayback = viewModel.clipPlayback.collectAsStateWithLifecycle()
     ChatUserProfileScreenContent(
         state = state,
         sharedKeyPartnerId = sharedKeyPartnerId,
@@ -24,5 +25,11 @@ fun ChatUserProfileScreen(
         onVideoCallClick = onVideoCallClick,
         onEditClick = onEditClick,
         onMediaTabChange = viewModel::onMediaTabChange,
+        clipPlayback = clipPlayback,
+        onLoadMoreMedia = viewModel::loadMoreMedia,
+        onDownloadMedia = viewModel::downloadMedia,
+        onCancelDownload = viewModel::cancelDownload,
+        onCancelUpload = viewModel::cancelUpload,
+        onToggleVoice = viewModel::toggleVoice,
     )
 }

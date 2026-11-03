@@ -14,8 +14,8 @@ import androidx.compose.runtime.setValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.messenger.presentation.base.ObserveAsEvents
+import com.example.messenger.presentation.components.auth.PhoneNumberRules
 import com.example.messenger.presentation.components.auth.model.AuthMode
-import com.example.messenger.presentation.components.auth.model.Countries
 
 @Composable
 fun AuthScreen(
@@ -23,12 +23,7 @@ fun AuthScreen(
     onAuthSuccess: () -> Unit = {},
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
-
-    var mode by remember { mutableStateOf(AuthMode.REGISTER) }
-    var selectedCountry by remember { mutableStateOf(Countries.default) }
-    var nationalNumber by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var otp by remember { mutableStateOf("") }
+    val phoneRules = remember { PhoneNumberRules() }
 
     var attempt by remember { mutableIntStateOf(0) }
     val ring = remember { Animatable(1f) }
@@ -56,44 +51,38 @@ fun AuthScreen(
     }
 
     AuthScreenContent(
-        mode = mode,
-        selectedCountry = selectedCountry,
-        nationalNumber = nationalNumber,
-        username = username,
-        otp = otp,
+        mode = uiState.mode,
+        selectedCountry = uiState.country,
+        nationalNumber = uiState.nationalNumber,
+        phoneValid = uiState.phoneValid,
+        username = uiState.username,
+        otp = uiState.otp,
         isLoading = uiState.isLoading,
         error = uiState.error?.asString(),
         codeSent = uiState.codeSent,
         ringProgress = { ring.value },
         expired = expired,
         onModeChange = { newMode ->
-            if (newMode != mode) {
-                mode = newMode
-                if (newMode == AuthMode.LOGIN) username = ""
-                viewModel.dispatch(AuthIntent.ClearError)
-            }
+            if (newMode != uiState.mode) viewModel.dispatch(AuthIntent.SelectMode(newMode))
         },
-        onCountryChange = { selectedCountry = it },
-        onNationalNumberChange = {
-            nationalNumber = it.filter { ch -> ch.isDigit() }
-            if (uiState.codeSent) {
-                otp = ""
-                viewModel.dispatch(AuthIntent.EditPhoneNumber)
-            }
-        },
-        onUsernameChange = { username = it },
-        onOtpChange = { otp = it },
+        onCountryChange = { viewModel.dispatch(AuthIntent.SelectCountry(it)) },
+        onNationalNumberChange = { viewModel.dispatch(AuthIntent.ChangeNationalNumber(it)) },
+        onChangeNumber = { viewModel.dispatch(AuthIntent.EditPhoneNumber) },
+        onUsernameChange = { viewModel.dispatch(AuthIntent.ChangeUsername(it)) },
+        onOtpChange = { viewModel.dispatch(AuthIntent.ChangeOtp(it)) },
         onSendOtp = {
-            val fullPhone = selectedCountry.dialCode + nationalNumber
-            val isRegister = mode == AuthMode.REGISTER
-            val nameForVm = if (isRegister) username else null
+            val fullPhone = phoneRules.toE164(uiState.country, uiState.nationalNumber)
+                ?: return@AuthScreenContent
+            val isRegister = uiState.mode == AuthMode.REGISTER
+            val nameForVm = if (isRegister) uiState.username else null
             activity?.let {
                 viewModel.dispatch(AuthIntent.SendVerificationCode(it, fullPhone, nameForVm, isRegister))
             }
         },
-        onVerifyOtp = { viewModel.dispatch(AuthIntent.VerifyOtpAndLogin(otp)) },
+        onVerifyOtp = { viewModel.dispatch(AuthIntent.VerifyOtpAndLogin(uiState.otp)) },
         onResendCode = {
-            val fullPhone = selectedCountry.dialCode + nationalNumber
+            val fullPhone = phoneRules.toE164(uiState.country, uiState.nationalNumber)
+                ?: return@AuthScreenContent
             activity?.let {
                 attempt++
                 viewModel.dispatch(AuthIntent.ResendCode(it, fullPhone))

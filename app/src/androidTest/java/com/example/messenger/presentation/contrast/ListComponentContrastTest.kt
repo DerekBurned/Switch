@@ -9,6 +9,8 @@ import com.example.messenger.presentation.components.list.EditChatRow
 import com.example.messenger.presentation.components.list.ForwardConversationRow
 import com.example.messenger.presentation.components.list.SearchUserItem
 import com.example.messenger.presentation.components.list.SwipeableConversationRow
+import com.example.messenger.presentation.screens.chats.ChatsEmpty
+import com.example.messenger.presentation.screens.contacts.ContactsScreenContentInner
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,6 +20,25 @@ class ListComponentContrastTest {
 
     @get:Rule
     val compose = createComposeRule()
+
+    @Test
+    fun chatsEmpty() = compose.assertReadableInBothThemes("ChatsEmpty") {
+        ChatsEmpty()
+    }
+
+    @Test
+    fun contactsEmpty() = compose.assertReadableInBothThemes(
+        component = "ContactsScreenContentInner empty",
+        texts = setOf("Start typing to find contacts"),
+    ) {
+        ContactsScreenContentInner(
+            users = emptyList(),
+            isLoading = false,
+            query = "",
+            onQueryChange = {},
+            onContactClick = {},
+        )
+    }
 
     @Test
     fun accountRow() = compose.assertReadableInBothThemes("AccountRow") {

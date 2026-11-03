@@ -7,7 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -48,6 +50,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.example.messenger.presentation.components.auth.model.Countries
 import com.example.messenger.presentation.components.auth.model.Country
 import com.example.messenger.presentation.components.common.MessengerSearchField
+import com.example.messenger.presentation.theme.Dimens
 import com.example.messenger.presentation.theme.MessengerShapes
 import com.example.messenger.presentation.theme.MessengerTheme
 import com.example.messenger.presentation.theme.messengerTokens
@@ -57,18 +60,20 @@ fun CountryCodePicker(
     selected: Country,
     onCountrySelected: (Country) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(12.dp)
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.height(IntrinsicSize.Min)) {
         Row(
             modifier = Modifier
-                .height(56.dp)
+                .heightIn(min = Dimens.fieldHeight)
+                .fillMaxHeight()
                 .shadow(elevation = 2.dp, shape = shape, clip = false)
                 .clip(shape)
                 .background(messengerTokens.fieldFill)
-                .clickable { menuOpen = true }
+                .clickable(enabled = enabled) { menuOpen = true }
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -83,7 +88,7 @@ fun CountryCodePicker(
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
                 contentDescription = "Choose country",
-                tint = messengerTokens.textMuted,
+                tint = messengerTokens.textOnFieldMuted,
             )
         }
 

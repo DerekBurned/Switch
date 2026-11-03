@@ -68,8 +68,46 @@ class NextVoiceClipTest {
     }
 
     @Test
+    fun `following clips with the same timestamp play in id order`() {
+        val candidates = listOf(voice("m7b", 700), voice("m7a", 700))
+        assertThat(nextVoiceClipAfter(current, candidates)?.id).isEqualTo("m7a")
+    }
+
+    @Test
     fun `unsorted candidates still yield the earliest following clip`() {
         val candidates = listOf(voice("m9", 900), voice("m6", 600), voice("m7", 700))
         assertThat(nextVoiceClipAfter(current, candidates)?.id).isEqualTo("m6")
+    }
+
+    @Test
+    fun `a server-only clip continues with the next server-only clip before cached ones`() {
+        val serverOnly = voice("r1", 100)
+        val next = nextVoiceClipAfter(
+            current = serverOnly,
+            cached = listOf(voice("c9", 900)),
+            remote = listOf(serverOnly, voice("r2", 200)),
+        )
+        assertThat(next?.id).isEqualTo("r2")
+    }
+
+    @Test
+    fun `the cached copy of a clip wins over its server copy`() {
+        val next = nextVoiceClipAfter(
+            current = current,
+            cached = listOf(voice("m6", 600, deleted = true)),
+            remote = listOf(voice("m6", 600), voice("m7", 700)),
+        )
+        assertThat(next?.id).isEqualTo("m7")
+    }
+
+    @Test
+    fun `server clips from other chats are ignored`() {
+        val elsewhere = Message.Clip(id = "x6", conversationId = "c2", timestamp = 600, clip = Clip.Voice())
+        val next = nextVoiceClipAfter(
+            current = current,
+            cached = listOf(voice("m7", 700)),
+            remote = listOf(elsewhere),
+        )
+        assertThat(next?.id).isEqualTo("m7")
     }
 }

@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
@@ -90,7 +89,7 @@ internal fun EditContactDataScreenContent(
                 }
                 Spacer(Modifier.height(8.dp))
                 if (state.username.isNotBlank()) {
-                    Text("@${state.username}", color = tokens.textPrimary.copy(alpha = 0.6f), fontSize = 13.sp)
+                    Text("@${state.username}", color = tokens.textMuted, fontSize = 13.sp)
                 }
                 if (featureEnabled(FeatureFlag.PROFILE_EDIT_CHANGE_PHOTO)) {
                     TextButton(onClick = {}) {
@@ -131,7 +130,7 @@ internal fun EditContactDataScreenContent(
         AlertDialog(
             onDismissRequest = onDismissDeleteConfirm,
             title = { Text("Delete contact?") },
-            text = { Text("This will also delete the chat.", color = Color.Gray) },
+            text = { Text("This will also delete the chat.", color = tokens.textMuted) },
             confirmButton = {
                 TextButton(onClick = onConfirmDelete) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
