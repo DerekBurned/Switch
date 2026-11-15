@@ -57,36 +57,36 @@ jobs:
           fi
           echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
 
-      - name: Install signing keystore
+      - name: Install release keystore
         id: keystore
         env:
-          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         run: |
-          if [ -z "$DEBUG_KEYSTORE_BASE64" ]; then
-            echo "::error::DEBUG_KEYSTORE_BASE64 secret is not set. Add the base64 of your ~/.android/debug.keystore so CI builds share the signature of your local builds."
-            exit 1
-          fi
-          keystore="$RUNNER_TEMP/debug.keystore"
-          echo "$DEBUG_KEYSTORE_BASE64" | base64 --decode > "$keystore"
-          if ! listing=$(keytool -list -v -keystore "$keystore" -storepass android 2>&1); then
-            echo "$listing" | head -5
-            echo "::error::DEBUG_KEYSTORE_BASE64 does not decode to a keystore that opens with the debug password. Re-create the secret from the keystore your local builds use: base64 -w0 ~/.android/debug.keystore"
-            exit 1
-          fi
-          if ! echo "$listing" | grep -qi '^Alias name: androiddebugkey$'; then
-            echo "::error::The installed keystore has no 'androiddebugkey' entry, so the debug signing config cannot use it. Entries: $(echo "$listing" | sed -n 's/^Alias name: //p' | tr '\n' ' ')"
+          for name in RELEASE_KEYSTORE_BASE64 RELEASE_KEYSTORE_PASSWORD RELEASE_KEY_ALIAS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name secret is not set. Add it under Settings > Secrets and variables > Actions; the README section 'Release signing' says how to create the keystore."
+              exit 1
+            fi
+          done
+          keystore="$RUNNER_TEMP/release.keystore"
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          if ! listing=$(keytool -list -v -keystore "$keystore" -storepass:env RELEASE_KEYSTORE_PASSWORD -alias "$RELEASE_KEY_ALIAS" 2>&1) || echo "$listing" | grep -q "does not exist"; then
+            echo "$listing" | grep -v '^[[:space:]]*at ' | head -3
+            echo "::error::The release keystore could not be opened with RELEASE_KEYSTORE_PASSWORD, or has no entry named by RELEASE_KEY_ALIAS. Re-create the secrets from the keystore: base64 -w0 <keystore file>"
             exit 1
           fi
           sha1=$(echo "$listing" | sed -n 's/^[[:space:]]*SHA1: *//p' | head -1)
           sha256=$(echo "$listing" | sed -n 's/^[[:space:]]*SHA256: *//p' | head -1)
           if ! [[ "$sha1" =~ ^([0-9A-F]{2}:){19}[0-9A-F]{2}$ ]] || ! [[ "$sha256" =~ ^([0-9A-F]{2}:){31}[0-9A-F]{2}$ ]]; then
-            echo "::error::Could not read the certificate fingerprints of the installed keystore; got SHA-1 '$sha1' and SHA-256 '$sha256'."
+            echo "::error::Could not read the certificate fingerprints of the release keystore; got SHA-1 '$sha1' and SHA-256 '$sha256'."
             exit 1
           fi
-          echo "DEBUG_KEYSTORE_FILE=$keystore" >> "$GITHUB_ENV"
+          echo "RELEASE_KEYSTORE_FILE=$keystore" >> "$GITHUB_ENV"
           echo "sha1=$sha1" >> "$GITHUB_OUTPUT"
           echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
-          echo "Installed keystore certificate: SHA-1 $sha1 / SHA-256 $sha256"
+          echo "Release keystore certificate: SHA-1 $sha1 / SHA-256 $sha256"
 
       - name: Set requested version
         if: inputs.version != ''
@@ -154,6 +154,9 @@ jobs:
       - name: Build release APK and AAB
         env:
           ORG_GRADLE_PROJECT_AGORA_APP_ID: ${{ secrets.AGORA_APP_ID }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           if [ -z "$ORG_GRADLE_PROJECT_AGORA_APP_ID" ]; then
             echo "::warning::AGORA_APP_ID secret is not set; calls will not work in this build."
@@ -195,10 +198,10 @@ jobs:
           echo "sha256=$(colonize "$sha256")" >> "$GITHUB_OUTPUT"
           installed=$(echo "$INSTALLED_SHA256" | tr -d ':' | tr 'A-F' 'a-f')
           if [ "$installed" != "$sha256" ]; then
-            echo "::error::$apk is signed with certificate SHA-256 $(colonize "$sha256"), but the keystore installed from DEBUG_KEYSTORE_BASE64 has SHA-256 $(colonize "$installed"). The build did not sign with the installed keystore, so the release is stopped."
+            echo "::error::$apk is signed with certificate SHA-256 $(colonize "$sha256"), but the release keystore installed from RELEASE_KEYSTORE_BASE64 has SHA-256 $(colonize "$installed"). The build did not sign with the installed keystore, so the release is stopped."
             exit 1
           fi
-          echo "The APK is signed with the keystore installed from DEBUG_KEYSTORE_BASE64."
+          echo "The APK is signed with the release keystore installed from RELEASE_KEYSTORE_BASE64."
           expected_file=".github/signing-cert.sha256"
           if [ -f "$expected_file" ]; then
             expected=$(grep -v '^[[:space:]]*#' "$expected_file" | tr -d ' :\n\r\t' | tr 'A-F' 'a-f')
@@ -207,7 +210,7 @@ jobs:
               exit 1
             fi
             if [ "$expected" != "$sha256" ]; then
-              echo "::error::$apk is signed with certificate SHA-256 $(colonize "$sha256"), but $expected_file expects $(colonize "$expected"). Firebase phone sign-in will fail for this build, so the release is stopped. Either the wrong keystore is in DEBUG_KEYSTORE_BASE64, or that file is out of date."
+              echo "::error::$apk is signed with certificate SHA-256 $(colonize "$sha256"), but $expected_file expects $(colonize "$expected"). Firebase phone sign-in will fail for this build, so the release is stopped. Either the wrong keystore is in RELEASE_KEYSTORE_BASE64, or that file is out of date."
               exit 1
             fi
             echo "Signing certificate matches $expected_file."
