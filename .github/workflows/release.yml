@@ -186,7 +186,9 @@ jobs:
           certs=$("$apksigner" verify --print-certs "$apk")
           echo "$certs"
           read_digest() {
-            echo "$certs" | sed -n "s/^Signer #1 certificate $1 digest: *//p" | head -1 | tr 'A-F' 'a-f'
+            # Older apksigner prints "Signer #1 certificate SHA-256 digest: ...", newer
+            # build-tools print "V2 Signer: certificate SHA-256 digest: ..."; take the first.
+            echo "$certs" | sed -n "s/^.*certificate $1 digest: *//p" | head -1 | tr 'A-F' 'a-f'
           }
           colonize() { echo "$1" | sed 's/../&:/g; s/:$//' | tr 'a-f' 'A-F'; }
           sha1=$(read_digest SHA-1)
