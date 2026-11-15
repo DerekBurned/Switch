@@ -83,7 +83,7 @@ jobs:
             echo "::error::Could not read the certificate fingerprints of the release keystore; got SHA-1 '$sha1' and SHA-256 '$sha256'."
             exit 1
           fi
-          echo "RELEASE_KEYSTORE_FILE=$keystore" >> "$GITHUB_ENV"
+          echo "file=$keystore" >> "$GITHUB_OUTPUT"
           echo "sha1=$sha1" >> "$GITHUB_OUTPUT"
           echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
           echo "Release keystore certificate: SHA-1 $sha1 / SHA-256 $sha256"
@@ -154,6 +154,7 @@ jobs:
       - name: Build release APK and AAB
         env:
           ORG_GRADLE_PROJECT_AGORA_APP_ID: ${{ secrets.AGORA_APP_ID }}
+          RELEASE_KEYSTORE_FILE: ${{ steps.keystore.outputs.file }}
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
