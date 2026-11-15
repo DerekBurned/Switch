@@ -177,7 +177,7 @@ Enable in the Firebase console:
 
 Phone sign-in only works for builds whose signing certificate Firebase knows. Add the SHA-1 and SHA-256 fingerprints of your debug and release keys to the Android app in the project settings. `./gradlew signingReport` prints them.
 
-Release builds are signed with the debug key (`signingConfig` in `app/build.gradle.kts`), so CI needs the same keystore in the `DEBUG_KEYSTORE_BASE64` secret for its builds to be usable. The release workflow prints the fingerprints of the certificate it actually signed with, so take the values from its job log rather than assuming that secret holds the keystore you think it does. Once they are registered with Firebase, put the SHA-256 in `.github/signing-cert.sha256`; later releases then fail if the build is signed with anything else, and each release carries the fingerprints in its notes plus a `SHA256SUMS.txt` for the artifacts.
+Release builds are signed with the debug key (`signingConfig` in `app/build.gradle.kts`), so CI needs the same keystore in the `DEBUG_KEYSTORE_BASE64` secret for its builds to be usable. The release workflow names that keystore to Gradle explicitly, prints its fingerprints, and fails if the APK turns out to be signed with anything else, so take the values from its job log rather than assuming the secret holds the keystore you think it does. Once they are registered with Firebase, put the SHA-256 in `.github/signing-cert.sha256`; later releases then fail if the build is signed with anything else, and each release carries the fingerprints in its notes plus a `SHA256SUMS.txt` for the artifacts.
 
 Deploy the rules and indexes checked into this repository:
 

@@ -56,6 +56,15 @@ android {
 
     }
 
+    signingConfigs {
+        // CI installs the debug keystore from a secret and names it here, so the build
+        // signs with that file instead of generating a throwaway key when it does not
+        // find ~/.android/debug.keystore. Local builds leave the variable unset.
+        providers.environmentVariable("DEBUG_KEYSTORE_FILE").orNull
+            ?.takeIf { it.isNotBlank() }
+            ?.let { getByName("debug").storeFile = file(it) }
+    }
+
     buildTypes {
         debug {
             manifestPlaceholders["crashlyticsCollectionEnabled"] = false

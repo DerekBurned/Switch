@@ -58,6 +58,7 @@ jobs:
           echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
 
       - name: Install signing keystore
+        id: keystore
         env:
           DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
         run: |
@@ -65,9 +66,27 @@ jobs:
             echo "::error::DEBUG_KEYSTORE_BASE64 secret is not set. Add the base64 of your ~/.android/debug.keystore so CI builds share the signature of your local builds."
             exit 1
           fi
-          keystore_dir="${ANDROID_USER_HOME:-$HOME/.android}"
-          mkdir -p "$keystore_dir"
-          echo "$DEBUG_KEYSTORE_BASE64" | base64 --decode > "$keystore_dir/debug.keystore"
+          keystore="$RUNNER_TEMP/debug.keystore"
+          echo "$DEBUG_KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          if ! listing=$(keytool -list -v -keystore "$keystore" -storepass android 2>&1); then
+            echo "$listing" | head -5
+            echo "::error::DEBUG_KEYSTORE_BASE64 does not decode to a keystore that opens with the debug password. Re-create the secret from the keystore your local builds use: base64 -w0 ~/.android/debug.keystore"
+            exit 1
+          fi
+          if ! echo "$listing" | grep -qi '^Alias name: androiddebugkey$'; then
+            echo "::error::The installed keystore has no 'androiddebugkey' entry, so the debug signing config cannot use it. Entries: $(echo "$listing" | sed -n 's/^Alias name: //p' | tr '\n' ' ')"
+            exit 1
+          fi
+          sha1=$(echo "$listing" | sed -n 's/^[[:space:]]*SHA1: *//p' | head -1)
+          sha256=$(echo "$listing" | sed -n 's/^[[:space:]]*SHA256: *//p' | head -1)
+          if ! [[ "$sha1" =~ ^([0-9A-F]{2}:){19}[0-9A-F]{2}$ ]] || ! [[ "$sha256" =~ ^([0-9A-F]{2}:){31}[0-9A-F]{2}$ ]]; then
+            echo "::error::Could not read the certificate fingerprints of the installed keystore; got SHA-1 '$sha1' and SHA-256 '$sha256'."
+            exit 1
+          fi
+          echo "DEBUG_KEYSTORE_FILE=$keystore" >> "$GITHUB_ENV"
+          echo "sha1=$sha1" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+          echo "Installed keystore certificate: SHA-1 $sha1 / SHA-256 $sha256"
 
       - name: Set requested version
         if: inputs.version != ''
@@ -150,6 +169,8 @@ jobs:
 
       - name: Verify signing certificate
         id: signing
+        env:
+          INSTALLED_SHA256: ${{ steps.keystore.outputs.sha256 }}
         run: |
           apk=$(ls dist/*.apk)
           build_tools="${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools"
@@ -172,6 +193,12 @@ jobs:
           fi
           echo "sha1=$(colonize "$sha1")" >> "$GITHUB_OUTPUT"
           echo "sha256=$(colonize "$sha256")" >> "$GITHUB_OUTPUT"
+          installed=$(echo "$INSTALLED_SHA256" | tr -d ':' | tr 'A-F' 'a-f')
+          if [ "$installed" != "$sha256" ]; then
+            echo "::error::$apk is signed with certificate SHA-256 $(colonize "$sha256"), but the keystore installed from DEBUG_KEYSTORE_BASE64 has SHA-256 $(colonize "$installed"). The build did not sign with the installed keystore, so the release is stopped."
+            exit 1
+          fi
+          echo "The APK is signed with the keystore installed from DEBUG_KEYSTORE_BASE64."
           expected_file=".github/signing-cert.sha256"
           if [ -f "$expected_file" ]; then
             expected=$(grep -v '^[[:space:]]*#' "$expected_file" | tr -d ' :\n\r\t' | tr 'A-F' 'a-f')
