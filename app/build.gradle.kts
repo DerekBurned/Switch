@@ -56,6 +56,32 @@ android {
 
     }
 
+    // CI installs the release keystore from secrets and describes it through these
+    // variables. Local builds leave them unset and sign release with the debug key, so
+    // assembleRelease keeps working without the release keystore.
+    val releaseKeystoreFile = providers.environmentVariable("RELEASE_KEYSTORE_FILE").orNull?.takeIf { it.isNotBlank() }
+    val releaseKeystorePassword = providers.environmentVariable("RELEASE_KEYSTORE_PASSWORD").orNull?.takeIf { it.isNotBlank() }
+    val releaseKeyAlias = providers.environmentVariable("RELEASE_KEY_ALIAS").orNull?.takeIf { it.isNotBlank() }
+    val releaseKeyPassword = providers.environmentVariable("RELEASE_KEY_PASSWORD").orNull?.takeIf { it.isNotBlank() }
+    val releaseSigningValues = listOf(releaseKeystoreFile, releaseKeystorePassword, releaseKeyAlias)
+    val hasReleaseSigning = releaseSigningValues.all { it != null }
+    if (!hasReleaseSigning && releaseSigningValues.any { it != null }) {
+        throw GradleException(
+            "Set RELEASE_KEYSTORE_FILE, RELEASE_KEYSTORE_PASSWORD and RELEASE_KEY_ALIAS together, or none of them."
+        )
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseKeystoreFile!!)
+                storePassword = releaseKeystorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword ?: releaseKeystorePassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             manifestPlaceholders["crashlyticsCollectionEnabled"] = false
@@ -66,7 +92,7 @@ android {
             buildConfigField("String", "FEATURES_OFF_BY_DEFAULT", "\"${featuresOffInRelease.joinToString(",")}\"")
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (hasReleaseSigning) "release" else "debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

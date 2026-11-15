@@ -177,6 +177,21 @@ Enable in the Firebase console:
 
 Phone sign-in only works for builds whose signing certificate Firebase knows. Add the SHA-1 and SHA-256 fingerprints of your debug and release keys to the Android app in the project settings. `./gradlew signingReport` prints them.
 
+### Release signing
+
+Release builds are signed with the release key when `RELEASE_KEYSTORE_FILE`, `RELEASE_KEYSTORE_PASSWORD` and `RELEASE_KEY_ALIAS` are set in the environment (plus `RELEASE_KEY_PASSWORD` if the key has a password of its own), and with the debug key otherwise, so `assembleRelease` keeps working locally. The Release workflow requires the release key. To set it up once:
+
+1. Generate the keystore. Keep the file and its password somewhere safe outside the repository: without them the app can never be updated again.
+
+   ```bash
+   keytool -genkeypair -v -keystore switch-release.jks -storetype PKCS12 -alias switch -keyalg RSA -keysize 4096 -validity 10000
+   ```
+
+2. In each repository that cuts releases, add the Actions secrets `RELEASE_KEYSTORE_BASE64` (the output of `base64 -w0 switch-release.jks`), `RELEASE_KEYSTORE_PASSWORD` and `RELEASE_KEY_ALIAS`. Use the same keystore everywhere, so every release shares one signature.
+3. Run the Release workflow with the version left empty. Its *Install release keystore* step prints the key's SHA-1 and SHA-256 fingerprints as soon as it starts. Register both with Firebase as described above, and commit the SHA-256 to `.github/signing-cert.sha256`.
+
+Every release then fails unless the APK is signed with the installed key and, once that file exists, with the committed fingerprint; each release carries the fingerprints in its notes plus a `SHA256SUMS.txt` for the artifacts.
+
 Deploy the rules and indexes checked into this repository:
 
 ```bash

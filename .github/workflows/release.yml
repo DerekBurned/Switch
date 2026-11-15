@@ -24,16 +24,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
@@ -57,17 +57,36 @@ jobs:
           fi
           echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
 
-      - name: Install signing keystore
+      - name: Install release keystore
+        id: keystore
         env:
-          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         run: |
-          if [ -z "$DEBUG_KEYSTORE_BASE64" ]; then
-            echo "::error::DEBUG_KEYSTORE_BASE64 secret is not set. Add the base64 of your ~/.android/debug.keystore so CI builds share the signature of your local builds."
+          for name in RELEASE_KEYSTORE_BASE64 RELEASE_KEYSTORE_PASSWORD RELEASE_KEY_ALIAS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name secret is not set. Add it under Settings > Secrets and variables > Actions; the README section 'Release signing' says how to create the keystore."
+              exit 1
+            fi
+          done
+          keystore="$RUNNER_TEMP/release.keystore"
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          if ! listing=$(keytool -list -v -keystore "$keystore" -storepass:env RELEASE_KEYSTORE_PASSWORD -alias "$RELEASE_KEY_ALIAS" 2>&1) || echo "$listing" | grep -q "does not exist"; then
+            echo "$listing" | grep -v '^[[:space:]]*at ' | head -3
+            echo "::error::The release keystore could not be opened with RELEASE_KEYSTORE_PASSWORD, or has no entry named by RELEASE_KEY_ALIAS. Re-create the secrets from the keystore: base64 -w0 <keystore file>"
             exit 1
           fi
-          keystore_dir="${ANDROID_USER_HOME:-$HOME/.android}"
-          mkdir -p "$keystore_dir"
-          echo "$DEBUG_KEYSTORE_BASE64" | base64 --decode > "$keystore_dir/debug.keystore"
+          sha1=$(echo "$listing" | sed -n 's/^[[:space:]]*SHA1: *//p' | head -1)
+          sha256=$(echo "$listing" | sed -n 's/^[[:space:]]*SHA256: *//p' | head -1)
+          if ! [[ "$sha1" =~ ^([0-9A-F]{2}:){19}[0-9A-F]{2}$ ]] || ! [[ "$sha256" =~ ^([0-9A-F]{2}:){31}[0-9A-F]{2}$ ]]; then
+            echo "::error::Could not read the certificate fingerprints of the release keystore; got SHA-1 '$sha1' and SHA-256 '$sha256'."
+            exit 1
+          fi
+          echo "file=$keystore" >> "$GITHUB_OUTPUT"
+          echo "sha1=$sha1" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+          echo "Release keystore certificate: SHA-1 $sha1 / SHA-256 $sha256"
 
       - name: Set requested version
         if: inputs.version != ''
@@ -135,6 +154,10 @@ jobs:
       - name: Build release APK and AAB
         env:
           ORG_GRADLE_PROJECT_AGORA_APP_ID: ${{ secrets.AGORA_APP_ID }}
+          RELEASE_KEYSTORE_FILE: ${{ steps.keystore.outputs.file }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           if [ -z "$ORG_GRADLE_PROJECT_AGORA_APP_ID" ]; then
             echo "::warning::AGORA_APP_ID secret is not set; calls will not work in this build."
@@ -147,6 +170,85 @@ jobs:
           cp app/build/outputs/apk/release/app-release.apk "dist/Switch-${{ steps.version.outputs.name }}.apk"
           cp app/build/outputs/bundle/release/app-release.aab "dist/Switch-${{ steps.version.outputs.name }}.aab"
           ls -l dist
+
+      - name: Verify signing certificate
+        id: signing
+        env:
+          INSTALLED_SHA256: ${{ steps.keystore.outputs.sha256 }}
+        run: |
+          apk=$(ls dist/*.apk)
+          build_tools="${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools"
+          apksigner=$(find "$build_tools" -name apksigner -type f 2>/dev/null | sort -V | tail -1)
+          if [ -z "$apksigner" ]; then
+            echo "::error::apksigner was not found under $build_tools, so the signing certificate of $apk could not be read."
+            exit 1
+          fi
+          certs=$("$apksigner" verify --print-certs "$apk")
+          echo "$certs"
+          read_digest() {
+            # Older apksigner prints "Signer #1 certificate SHA-256 digest: ...", newer
+            # build-tools print "V2 Signer: certificate SHA-256 digest: ..."; take the first.
+            echo "$certs" | sed -n "s/^.*certificate $1 digest: *//p" | head -1 | tr 'A-F' 'a-f'
+          }
+          colonize() { echo "$1" | sed 's/../&:/g; s/:$//' | tr 'a-f' 'A-F'; }
+          sha1=$(read_digest SHA-1)
+          sha256=$(read_digest SHA-256)
+          if ! [[ "$sha1" =~ ^[0-9a-f]{40}$ ]] || ! [[ "$sha256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::Could not read the certificate digests from apksigner output; got SHA-1 '$sha1' and SHA-256 '$sha256'."
+            exit 1
+          fi
+          echo "sha1=$(colonize "$sha1")" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(colonize "$sha256")" >> "$GITHUB_OUTPUT"
+          installed=$(echo "$INSTALLED_SHA256" | tr -d ':' | tr 'A-F' 'a-f')
+          if [ "$installed" != "$sha256" ]; then
+            echo "::error::$apk is signed with certificate SHA-256 $(colonize "$sha256"), but the release keystore installed from RELEASE_KEYSTORE_BASE64 has SHA-256 $(colonize "$installed"). The build did not sign with the installed keystore, so the release is stopped."
+            exit 1
+          fi
+          echo "The APK is signed with the release keystore installed from RELEASE_KEYSTORE_BASE64."
+          expected_file=".github/signing-cert.sha256"
+          if [ -f "$expected_file" ]; then
+            expected=$(grep -v '^[[:space:]]*#' "$expected_file" | tr -d ' :\n\r\t' | tr 'A-F' 'a-f')
+            if ! [[ "$expected" =~ ^[0-9a-f]{64}$ ]]; then
+              echo "::error::$expected_file must hold one SHA-256 certificate fingerprint (64 hex characters, colons and # comments allowed); it holds '$expected'."
+              exit 1
+            fi
+            if [ "$expected" != "$sha256" ]; then
+              echo "::error::$apk is signed with certificate SHA-256 $(colonize "$sha256"), but $expected_file expects $(colonize "$expected"). Firebase phone sign-in will fail for this build, so the release is stopped. Either the wrong keystore is in RELEASE_KEYSTORE_BASE64, or that file is out of date."
+              exit 1
+            fi
+            echo "Signing certificate matches $expected_file."
+          else
+            echo "::notice::Signing certificate SHA-1 $(colonize "$sha1") / SHA-256 $(colonize "$sha256"). Register both in the Firebase console (Project settings > the Android app > Add fingerprint), then commit the SHA-256 to $expected_file so later releases are checked against it."
+          fi
+
+      - name: Write artifact checksums
+        run: |
+          cd dist
+          sha256sum ./*.apk ./*.aab > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Write release notes
+        env:
+          CERT_SHA1: ${{ steps.signing.outputs.sha1 }}
+          CERT_SHA256: ${{ steps.signing.outputs.sha256 }}
+        run: |
+          {
+            echo "### Verifying this build"
+            echo
+            echo "Signing certificate of the APK, as registered with Firebase:"
+            echo
+            echo "- SHA-1: \`$CERT_SHA1\`"
+            echo "- SHA-256: \`$CERT_SHA256\`"
+            echo
+            echo "Check a download against them:"
+            echo
+            echo '```'
+            echo "apksigner verify --print-certs Switch-${{ steps.version.outputs.name }}.apk"
+            echo "sha256sum -c SHA256SUMS.txt"
+            echo '```'
+            echo
+          } > "$RUNNER_TEMP/release-notes.md"
+          cat "$RUNNER_TEMP/release-notes.md"
 
       - name: Commit version and push tag
         if: inputs.version != ''
@@ -169,12 +271,13 @@ jobs:
         run: |
           gh release create "$RELEASE_TAG" dist/* \
             --title "$RELEASE_TAG" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
             --generate-notes \
             --verify-tag
 
       - name: Upload build outputs
         if: steps.version.outputs.tag == ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: Switch-${{ steps.version.outputs.name }}
           path: dist/
